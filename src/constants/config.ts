@@ -1,4 +1,4 @@
-export const baseUrl = "https://appentregas.life.com.ec/";
+export const baseUrl = "https://localhost:7135/";
 export const emailPanicNotification = "DelivPanic";
 export const numTransportOrders = 100;
 export const tableIdDocuments = 103432;

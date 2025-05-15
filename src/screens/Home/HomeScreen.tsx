@@ -154,6 +154,11 @@ const HomeScreen: React.FC = () => {
     <>
       <SafeAreaView style={styles.container}>
         <View>
+          {/* Título de la pantalla */}
+          <Text style={[styles.title, { fontSize: 24, fontWeight: "bold", margin: 16 }]}>
+            Órdenes de Transporte
+          </Text>
+
           <TextInput
             style={{
               borderWidth: 1,

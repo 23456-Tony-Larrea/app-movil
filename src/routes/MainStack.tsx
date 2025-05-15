@@ -40,37 +40,27 @@ const MainStack = () => {
        <Stack.Screen
         name="Detalles"
         component={(props: any) => <OrderLines {...props} />}
-        options={{
-          headerBackVisible: false,
-        }}
+        options={{headerBackVisible: false,}}
       />
       <Stack.Screen
         name="EntregarOrden"
         component={(props: any) => <DeliverOrderScreen {...props} />}
-        options={{
-          title: "Entregar orden",
-        }}
+        options={{title: "Entregar orden",}}
       />
       <Stack.Screen
         name="PanicNotification"
         component={(props: any) => <NotificationScreen {...props} />}
-        options={{
-          title: "Notificación de pánico",
-        }}
+        options={{title: "Notificación de pánico",}}
       />
       <Stack.Screen
         name="DocumentsScreen"
         component={(props: any) => <DocumentsScreen {...props} />}
-        options={{
-          title: "Documento cargado",
-        }}
+        options={{title: "Documento cargado",}}
       />
       <Stack.Screen
         name="Camera"
         component={(props: any) => <Camera {...props} />}
-        options={{
-          title: "Carga de archivos",
-        }}
+        options={{title: "Carga de archivos",}}
       />
     </Stack.Navigator>
   );

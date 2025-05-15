@@ -1,9 +1,10 @@
-import React, { memo, useContext } from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { memo, useContext, useEffect } from "react";
+import { View, Text, Pressable, Alert } from "react-native";
 import { grey, redLife, redPressed } from "../../constants/color";
 import Icon from "react-native-vector-icons/FontAwesome";
 import styles from "./style";
 import { useNavigation } from "@react-navigation/native";
+import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
 
 type OrderStatus = {
@@ -11,12 +12,16 @@ type OrderStatus = {
   text: string;
 };
 
-export interface TransportOrder {
+export interface TransportOrder { 
   orderId: string;
   status: string;
   deliveryDate: string;
-  orderLines: any[]; // Cambia `any[]` por el tipo adecuado si lo conoces
+  orderLines: OrderLine[]; // Cambia `any[]` por el tipo adecuado si lo conoces
   orderLineStates: any[]; // Cambia `any[]` por el tipo adecuado si lo conoces
+}
+
+interface OrderLine {
+  salesOrderId: string;
 }
 
 const orderStatus: OrderStatus[] = [
@@ -47,6 +52,8 @@ const Order: React.FC<OrderProps> = ({ order }) => {
     postTransportOrderChecker,
   } = useContext(TransportOrderContext)!;
 
+  const { getOrderLine, orderLines } = useContext(OrderLineContext)!;
+
   const fnOrderDetail = async (order: TransportOrder) => {
     setTransportOrder(order);
     navigation.navigate("Detalles", { order });
@@ -60,12 +67,15 @@ const Order: React.FC<OrderProps> = ({ order }) => {
         setUpdate(true);
       }
     } catch (error) {
-      alert(error);
+      Alert.alert(error as string);
     }
   };
 
+  useEffect(() => {
+    getOrderLine("li",order.orderId);
+  }, [order]);
+
   return (
-    
     <Pressable
       onPress={() => fnOrderDetail(order)}
       style={({ pressed }) => [
@@ -75,7 +85,6 @@ const Order: React.FC<OrderProps> = ({ order }) => {
         styles.item,
       ]}
     >
-      
       <Text style={styles.title}>{order.orderId}</Text>
 
       <View style={styles.row}>
@@ -84,12 +93,26 @@ const Order: React.FC<OrderProps> = ({ order }) => {
           <Text style={styles.text}>
             {orderStatus.find((sta) => sta.id === order.status)?.text || "Desconocido"}
           </Text>
+
         </View>
         <View style={styles.column}>
           <Text style={styles.subTitle}>Fecha de entrega:</Text>
           <Text style={styles.text}>{order.deliveryDate.substring(0, 10)}</Text>
         </View>
+        <View style={styles.column}>
+ <Text style={styles.subTitle}>Sales Order ID:</Text>
+ {orderLines.map((orderLine, index) => (
+ <Text
+ key={index} // Using index as a key, consider using a unique ID from your data if available
+ style={styles.text}>
+ {orderLine.salesOrderId}
+ </Text>
+ ))}
+ </View>
       </View>
+
+
+      
       {order.status === "0" && (
         <View style={styles.row}>
           <View

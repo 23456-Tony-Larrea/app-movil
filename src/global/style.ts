@@ -31,13 +31,13 @@ const globalStyles = StyleSheet.create({
     borderRadius: 15,
     width: "75%",
     height: "30%",
-    shadowColor: "white",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.75,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.75)',
+    // shadowColor: "white",
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 2,
+    // },
+    // shadowOpacity: 0.75,
     elevation: 20,
   },
   modalBtnExit: {

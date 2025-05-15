@@ -1,5 +1,5 @@
 import React, { useCallback, useReducer, ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { MMKV } from "react-native-mmkv";
 import { TransportOrderReducer } from "./TransportOrderReducer";
 import { TransportOrderContext } from "./TransportOrderContext";
 import { baseUrl } from "../../constants/config";
@@ -35,6 +35,8 @@ export interface TransportOrderContextType extends TransportOrderStateType {
 interface TransportOrderProviderProps {
   children: ReactNode;
 }
+
+const storage = new MMKV();
 
 const TransportOrderState: React.FC<TransportOrderProviderProps> = ({ children }) => {
   const initialState: TransportOrderStateType = {
@@ -73,12 +75,14 @@ const TransportOrderState: React.FC<TransportOrderProviderProps> = ({ children }
         localUrl = localUrl + "&numOfRecords=" + numOfRecords;
       }
       const response1 = await fetch(localUrl);
+   
       if (response1.status === 200) {
         const data = await response1.json();
         dispatch({
           type: TRANSPORTORDER.TRANSPORTORDER,
           payload: { data: data, loading: false, update: false },
         });
+        console.log("holi",data.json());
       }
     } catch (error) {
       dispatch({
@@ -166,7 +170,7 @@ const TransportOrderState: React.FC<TransportOrderProviderProps> = ({ children }
 
   const setCurrentCompany = async (value: string) => {
     try {
-      await AsyncStorage.setItem("@storageCompany", value);
+      storage.set("@storageCompany", value);
       dispatch({
         type: TRANSPORTORDER.COMPANY,
         payload: value,
@@ -199,7 +203,7 @@ const TransportOrderState: React.FC<TransportOrderProviderProps> = ({ children }
 
   const getCurrentCompany = async (): Promise<string | undefined> => {
     try {
-      const value = await AsyncStorage.getItem("@storageCompany");
+      const value = storage.getString("@storageCompany");
       if (value !== undefined) {
         return value!;
       }
