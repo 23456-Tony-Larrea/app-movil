@@ -111,7 +111,7 @@ export default function Login() {
               }}
             >
               <Image
-                source={require("../../assets/LifeEntregas.gif")}
+                source={require("../../assets/LIFE-APP.png")}
                 style={{ width: 170, height: 170, borderRadius: 85, backgroundColor: "#fff" }}
                 resizeMode="contain"
               />
