@@ -49,16 +49,18 @@ export default function Login() {
   }, []);
 
   const handleSignInPress = async () => {
-    // Navega directamente a MainStack sin loguear
-    // navigation.navigate('MainStack');
-    setAuthResult({} as MSALResult); // Simula autenticación para mostrar MainStack
-    // Si quieres usar navegación real, descomenta la línea de arriba y configura navigation
-    // try {
-    //   const res = await b2cClient.signIn({ scopes, webviewParameters });
-    //   setAuthResult(res);
-    // } catch (error) {
-    //   console.warn(error);
-    // }
+    setloadingLocal(true);
+    try {
+      const res = await b2cClient.signIn({ scopes, webviewParameters });
+      setAuthResult(res);
+      if (res && res.accessToken) {
+        console.log('MSAL Access Token:', res.accessToken);
+      }
+    } catch (error) {
+      console.warn(error);
+    } finally {
+      setloadingLocal(false);
+    }
   };
 
   const handleAcquireTokenPress = async () => {

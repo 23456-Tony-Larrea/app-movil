@@ -57,15 +57,23 @@ const HomeScreen = () => {
       setFilteredData([]);
       return;
     }
+    // Formatea las fechas a 'YYYY-MM-DD'
+    const formatDate = (date) => {
+      if (!date) return null;
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return null;
+      const month = '' + (d.getMonth() + 1);
+      const day = '' + d.getDate();
+      const year = d.getFullYear();
+      return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
+    };
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
     const filtered = dataList.filter((item) => {
-      const orderDate = new Date(item.date);
-      // Normaliza las fechas a solo día para evitar problemas de hora
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      start.setHours(0,0,0,0);
-      end.setHours(23,59,59,999);
-      orderDate.setHours(12,0,0,0); // para evitar desfases por zona horaria
-      return orderDate >= start && orderDate <= end;
+      // Filtra por fecha de entrega (deliveryDate) en vez de date
+      const itemDate = formatDate(item.deliveryDate);
+      if (!itemDate) return false;
+      return itemDate >= start && itemDate <= end;
     });
     setFilteredData(filtered);
   };
@@ -73,102 +81,42 @@ const HomeScreen = () => {
   const handleSortByDate = () => {
     setSortDesc((prev) => !prev);
     const sorted = [...filteredData].sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
+      const dateA = new Date(a.deliveryDate);
+      const dateB = new Date(b.deliveryDate);
+      // sortDesc true: más reciente a más antigua, false: más antigua a más reciente
       return sortDesc ? dateB - dateA : dateA - dateB;
     });
     setFilteredData(sorted);
   };
 
+  // Función para limpiar todos los filtros
+  const clearFilters = () => {
+    setSearchText("");
+    setStartDate(null);
+    setEndDate(null);
+    setFilteredData(dataList);
+  };
+
+  // Eliminar datos mock y usar datos del backend
   useEffect(() => {
-    // Simular datos mock en estado 'verificado' ("2") para pruebas
-    const mockOrders = [
-      {
-        orderId: "ORD001",
-        codigoOT: "OT-1001",
-        secuencial: 1,
-        date: "2024-06-01T10:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-05T15:00:00Z",
-        customer: "Cliente A",
-        description: "Entrega de productos A",
-        orderLines: [
-          { salesOrderId: "SO-001-A" },
-          { salesOrderId: "SO-001-B" }
-        ]
-      },
-      {
-        orderId: "ORD002",
-        codigoOT: "OT-1002",
-        secuencial: 2,
-        date: "2024-06-02T11:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-06T16:00:00Z",
-        customer: "Cliente B",
-        description: "Entrega de productos B",
-        orderLines: [
-          { salesOrderId: "SO-002-A" }
-        ]
-      },
-      {
-        orderId: "ORD003",
-        codigoOT: "OT-1003",
-        secuencial: 3,
-        date: "2024-06-03T12:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-07T17:00:00Z",
-        customer: "Cliente C",
-        description: "Entrega de productos C",
-        orderLines: [
-          { salesOrderId: "SO-003-A" },
-          { salesOrderId: "SO-003-B" },
-          { salesOrderId: "SO-003-C" }
-        ]
-      },
-      {
-        orderId: "ORD004",
-        codigoOT: "OT-1004",
-        secuencial: 4,
-        date: "2024-06-04T13:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-08T18:00:00Z",
-        customer: "Cliente D",
-        description: "Entrega de productos D",
-        orderLines: [
-          { salesOrderId: "SO-004-A" }
-        ]
-      },
-      {
-        orderId: "ORD005",
-        codigoOT: "OT-1005",
-        secuencial: 5,
-        date: "2024-06-05T14:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-09T19:00:00Z",
-        customer: "Cliente E",
-        description: "Entrega de productos E",
-        orderLines: [
-          { salesOrderId: "SO-005-A" },
-          { salesOrderId: "SO-005-B" }
-        ]
-      },
-    ];
-    setdataList(mockOrders);
-    setFilteredData(mockOrders);
+    const fetchData = async () => {
+      setloading(true);
+      await getTransportOrders(orderState, startPosition, numTransportOrders);
+      setStartPosition((prevState) => prevState + numTransportOrders);
+      setloading(false);
+    };
+    fetchData();
   }, []);
+
+  // Actualizar dataList cuando cambian los datos del backend
+  useEffect(() => {
+    setdataList(transportOrders || []);
+    setFilteredData(transportOrders || []);
+  }, [transportOrders]);
 
   useEffect(() => {
     setFilteredData(dataList);
   }, [dataList]);
-
-  useEffect(() => {
-    const fetchData2 = async () => {
-      setloading(true);
-      await getTransportOrders(orderState, startPosition, numTransportOrders);
-      setStartPosition((prevState) => prevState + numTransportOrders);
-    };
-    fetchData2();
-  }, []);
 
   // Utilidad para formatear Date a 'YYYY-MM-DD'
   function formatDateToString(date) {
@@ -183,6 +131,16 @@ const HomeScreen = () => {
   return (
     <>
       <SafeAreaView style={[styles.container, { backgroundColor: "#fff", flex: 1 }]}> 
+        {/* Título principal */}
+        <Text style={{ fontSize: 22, fontWeight: "bold", color: redStrong, textAlign: "center", marginTop: 16, marginBottom: 8 }}>
+          Órdenes de transporte
+        </Text>
+        {/* Loading */}
+        {loading && (
+          <View style={{ marginVertical: 12 }}>
+            <Loading loading={loading} />
+          </View>
+        )}
         <FlatList
           ListHeaderComponent={
             <View>
@@ -191,14 +149,21 @@ const HomeScreen = () => {
                 <Icon name="search" size={24} color={redStrong} style={{ marginRight: 8 }} />
                 <TextInput
                   style={{ flex: 1, fontSize: 16, color: redStrong, backgroundColor: "#fff", paddingVertical: 8, borderRadius: 10 }}
-                  placeholder="Buscar por Order ID o Orden de Venta..."
+                  placeholder="Buscar por Order ID..."
                   placeholderTextColor={redLife}
                   value={searchText}
-                  onChangeText={handleSearch}
+                  onChangeText={(text) => {
+                    setSearchText(text);
+                    const filtered = dataList.filter((item) =>
+                      item.orderId && item.orderId.toLowerCase().includes(text.toLowerCase())
+                    );
+                    setFilteredData(filtered);
+                  }}
                 />
                 <TouchableOpacity onPress={handleSortByDate} style={{ marginLeft: 8, padding: 4 }}>
                   <Icon name={sortDesc ? "arrow-downward" : "arrow-upward"} size={24} color={redStrong} />
                 </TouchableOpacity>
+              
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
                 <Text
@@ -213,6 +178,9 @@ const HomeScreen = () => {
                 >
                   {endDate ? `Hasta: ${endDate.toLocaleDateString()}` : "Seleccionar fecha final"}
                 </Text>
+                <TouchableOpacity onPress={clearFilters} style={{ marginLeft: 8, padding: 4, backgroundColor: redStrong, borderRadius: 8, justifyContent: 'center', alignItems: 'center', height: 48, width: 48 }}>
+                  <Icon name="clear" size={24} color="#fff" />
+                </TouchableOpacity>
               </View>
               <Button title="Aplicar filtro de fechas" color={redStrong} onPress={filterByDate} />
               {/* DateTimePickers */}

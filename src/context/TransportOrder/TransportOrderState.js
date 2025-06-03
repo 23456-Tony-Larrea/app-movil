@@ -25,56 +25,6 @@ const TransportOrderState = (props) => {
   const [state, dispatch] = useReducer(TransportOrderReducer, initialState);
 
   const getTransportOrders = async (status, startPosition, numOfRecords) => {
-    // --- MOCK DATA INJECTION FOR DEVELOPMENT ---
-    const mockOrders = [
-      {
-        orderId: "ORD001",
-        date: "2024-06-01T10:00:00Z",
-        status: "0",
-        deliveryDate: "2024-06-05T15:00:00Z",
-        customer: "Cliente A",
-        description: "Entrega de productos A",
-      },
-      {
-        orderId: "ORD002",
-        date: "2024-06-02T11:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-06T16:00:00Z",
-        customer: "Cliente B",
-        description: "Entrega de productos B",
-      },
-      {
-        orderId: "ORD003",
-        date: "2024-06-03T12:00:00Z",
-        status: "3",
-        deliveryDate: "2024-06-07T17:00:00Z",
-        customer: "Cliente C",
-        description: "Entrega de productos C",
-      },
-      {
-        orderId: "ORD004",
-        date: "2024-06-04T13:00:00Z",
-        status: "0",
-        deliveryDate: "2024-06-08T18:00:00Z",
-        customer: "Cliente D",
-        description: "Entrega de productos D",
-      },
-      {
-        orderId: "ORD005",
-        date: "2024-06-05T14:00:00Z",
-        status: "2",
-        deliveryDate: "2024-06-09T19:00:00Z",
-        customer: "Cliente E",
-        description: "Entrega de productos E",
-      },
-    ];
-    dispatch({
-      type: TRANSPORTORDER.TRANSPORTORDER,
-      payload: { data: mockOrders, loading: false, update: false },
-    });
-    // --- END MOCK DATA ---
-    // If you want to restore real API fetching, comment out the above and uncomment the code below.
-    /*
     try {
       console.log(state.company);
       let localUrl =
@@ -106,7 +56,6 @@ const TransportOrderState = (props) => {
       });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
-    */
   };
   const postTransportOrderChecker = async (orderId) => {
     try {
