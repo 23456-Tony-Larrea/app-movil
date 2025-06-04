@@ -34,6 +34,11 @@ export default function Login() {
   };
 
   React.useEffect(() => {
+    // Si la plataforma es Android, simula autenticación automáticamente
+    if (Platform.OS === "android") {
+      setAuthResult({} as MSALResult);
+      return;
+    }
     async function init() {
       try {
         await b2cClient.init();
