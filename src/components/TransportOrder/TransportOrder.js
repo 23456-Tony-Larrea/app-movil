@@ -6,6 +6,7 @@ import styles from "./style";
 import { useNavigation } from "@react-navigation/native";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
 import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
+import SalesOrdersList from "./SalesOrdersList";
 
 const orderStatus = [
   {
@@ -71,28 +72,22 @@ const Order = ({ order }) => {
         <View style={styles.column}>
           <Text style={styles.subTitle}>Estado:</Text>
           <Text style={styles.text}>
-            {orderStatus.filter((sta) => sta.id == order.status)[0].text}
+            {orderStatus.find((sta) => sta.id == order.status)?.text || "-"}
           </Text>
         </View>
         <View style={styles.column}>
           <Text style={styles.subTitle}>Fecha de entrega:</Text>
-          <Text style={styles.text}>{order.deliveryDate.substring(0, 10)}</Text>
+          <Text style={styles.text}>
+            {order.deliveryDate
+              ? order.deliveryDate.substring(0, 10)
+              : "-"}
+          </Text>
         </View>
       </View>
 
-      {/* Renderiza los Sales Order ID */}
+      {/* Renderiza los Sales Order ID de la orden específica */}
       <View style={styles.row}>
-        <View style={styles.column}>
-          <Text style={styles.subTitle}>Ordenes de venta:</Text>
-          {orderLines.map((orderLine, index) => (
-            <Text
-              key={index} // Usa un índice como clave, pero considera usar un ID único si está disponible
-              style={styles.text}
-            >
-              {orderLine.salesOrderId}
-            </Text>
-          ))}
-        </View>
+        <SalesOrdersList orderLines={order.orderLines} />
       </View>
 
       {order.status === "0" && (

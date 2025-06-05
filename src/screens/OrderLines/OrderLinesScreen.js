@@ -51,7 +51,7 @@ const OrderLines = ({ route }) => {
     navigation.setOptions({
       headerLeft: () => (
         <Icon
-          name="left"
+          name="arrow-back"
           color={"black"}
           size={25}
           style={{
@@ -79,6 +79,8 @@ const OrderLines = ({ route }) => {
           />
         ),
       });
+    } else {
+      navigation.setOptions({ headerRight: undefined });
     }
   }, [navigation]);
 

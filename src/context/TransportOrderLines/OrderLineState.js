@@ -236,9 +236,17 @@ const OrderLineState = (props) => {
       if (comment === "") {
         comment = "n/a";
       }
+      const firstOrderLine =
+        state.orderLines && state.orderLines.length > 0
+          ? state.orderLines[0]
+          : null;
+      if (!firstOrderLine) {
+        alert("No hay líneas de orden disponibles.");
+        return;
+      }
       const data = {
-        salesOrderId: state.orderLines[0].salesOrderId,
-        recIdOV: state.orderLines[0].recIdOV,
+        salesOrderId: firstOrderLine.salesOrderId,
+        recIdOV: firstOrderLine.recIdOV,
         comment: comment,
       };
       let localUrl =

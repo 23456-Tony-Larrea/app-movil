@@ -3,49 +3,31 @@
  */
 
 import React from "react";
-import {
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-  TouchableOpacity,
-  Image,
-} from "react-native";
-import type { MSALResult, MSALWebviewParams } from "react-native-msal";
-
-import { B2CClient } from "./b2cClient";
-import { b2cConfig, b2cScopes as scopes } from "./msalConfig";
 import MainStack from "../routes/MainStack";
 import Loading from "../components/Loading/Loading";
+import { B2CClient } from "./b2cClient";
+import { b2cConfig, b2cScopes as scopes } from "./msalConfig";
+import { StyleSheet, View, TouchableOpacity, Text, Image } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
 import { redLife } from "../constants/color";
 import { subTitleSize } from "../constants/text";
 
 const b2cClient = new B2CClient(b2cConfig);
 
 export default function Login() {
-  const [loadingLocal, setloadingLocal] = React.useState<boolean>(false);
-  const [authResult, setAuthResult] = React.useState<MSALResult | null>(null);
+  const [loadingLocal, setloadingLocal] = React.useState(false);
+  const [authResult, setAuthResult] = React.useState(null);
   const [iosEphemeralSession, setIosEphemeralSession] = React.useState(false);
-  const webviewParameters: MSALWebviewParams = {
+  const webviewParameters = {
     ios_prefersEphemeralWebBrowserSession: iosEphemeralSession,
   };
 
   React.useEffect(() => {
-    // Si la plataforma es Android, simula autenticación automáticamente
-    if (Platform.OS === "android") {
-      setAuthResult({} as MSALResult);
-      return;
-    }
     async function init() {
       try {
         await b2cClient.init();
-        const isSignedIn = await b2cClient.isSignedIn();
-        if (isSignedIn) {
-          setAuthResult(await b2cClient.acquireTokenSilent({ scopes }));
-        }
+        await b2cClient.signOut(); // Cierra sesión y elimina el token cada vez que se refresca la app
+        setAuthResult(null);
       } catch (error) {
         console.error(error);
       }
@@ -54,88 +36,64 @@ export default function Login() {
   }, []);
 
   const handleSignInPress = async () => {
-    // Navega directamente a MainStack sin loguear
-    // navigation.navigate('MainStack');
-    setAuthResult({} as MSALResult); // Simula autenticación para mostrar MainStack
-    // Si quieres usar navegación real, descomenta la línea de arriba y configura navigation
-    // try {
-    //   const res = await b2cClient.signIn({ scopes, webviewParameters });
-    //   setAuthResult(res);
-    // } catch (error) {
-    //   console.warn(error);
-    // }
-  };
-
-  const handleAcquireTokenPress = async () => {
+    setloadingLocal(true);
     try {
-      const res = await b2cClient.acquireTokenSilent({
-        scopes,
-        forceRefresh: true,
-      });
+      const res = await b2cClient.signIn({ scopes, webviewParameters });
       setAuthResult(res);
+      if (res && res.accessToken) {
+        console.log('MSAL Access Token:', res.accessToken);
+      }
     } catch (error) {
       console.warn(error);
+    } finally {
+      setloadingLocal(false);
     }
   };
 
-  const handleSignoutPress = async () => {
-    try {
-      await b2cClient.signOut();
-      setAuthResult(null);
-    } catch (error) {
-      console.warn(error);
-    }
-  };
+  if (loadingLocal) {
+    return <Loading loading={loadingLocal} opacity={0.15} sizeIcon={40} />;
+  }
 
   return (
-    <>
-      {loadingLocal && (
-        <Loading loading={loadingLocal} opacity={0.15} sizeIcon={40} />
-      )}
-      {/* {!true ? ( */}
+    <NavigationContainer>
       {authResult ? (
-         <MainStack />
-         ) : (
-        <>
-          <View style={styles.container}>
-            <View
-              style={{
-                width: 180,
-                height: 180,
-                borderRadius: 90,
-                backgroundColor: "#fff", // avatar fondo blanco
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 24,
-                shadowColor: redLife,
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 4,
-                borderWidth: 2,
-                borderColor: "#fff"
-              }}
-            >
-              <Image
-                source={require("../../assets/LIFE-APP.png")}
-                style={{ width: 170, height: 170, borderRadius: 85, backgroundColor: "#fff" }}
-                resizeMode="contain"
-              />
-            </View>
-            <TouchableOpacity
-              style={[styles.btnDeliverOrder]}
-              onPress={() => handleSignInPress()}
-            >
-              <Text style={{ color: "white", fontSize: subTitleSize + 1 }}>
-                Ingresar
-              </Text>
-            </TouchableOpacity>
+        <MainStack />
+      ) : (
+        <View style={styles.container}>
+          <View
+            style={{
+              width: 180,
+              height: 180,
+              borderRadius: 90,
+              backgroundColor: "#fff",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 24,
+              shadowColor: redLife,
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 4,
+              borderWidth: 2,
+              borderColor: "#fff"
+            }}
+          >
+            <Image
+              source={require("../../assets/LIFE-APP.png")}
+              style={{ width: 170, height: 170, borderRadius: 85, backgroundColor: "#fff" }}
+              resizeMode="contain"
+            />
           </View>
-        </>
+          <TouchableOpacity
+            style={[styles.btnDeliverOrder]}
+            onPress={handleSignInPress}
+          >
+            <Text style={{ color: "white", fontSize: subTitleSize + 1 }}>
+              Ingresar
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
-      {/* <ScrollView style={styles.scrollView}>
-        <Text>{JSON.stringify(authResult, null, 2)}</Text>
-      </ScrollView> */}
-    </>
+    </NavigationContainer>
   );
 }
 
