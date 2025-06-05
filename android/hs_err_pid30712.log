@@ -1,0 +1,225 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 532676608 bytes for G1 virtual space
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is
+#     placed in the first 32GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_windows.cpp:3548), pid=30712, tid=37864
+#
+# JRE version:  (17.0.12+8) (build )
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (17.0.12+8-LTS-286, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -agentpath:C:\Program Files\Palo Alto Networks\Traps\cyjagent.dll 
+
+Host: 13th Gen Intel(R) Core(TM) i7-1355U, 12 cores, 31G,  Windows 11 , 64 bit Build 26100 (10.0.26100.4202)
+Time: Thu Jun  5 12:19:12 2025 Hora est. Pacífico, Sudamérica elapsed time: 0.042393 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00000223d9b00380):  JavaThread "Unknown thread" [_thread_in_vm, id=37864, stack(0x0000002550400000,0x0000002550500000)]
+
+Stack: [0x0000002550400000,0x0000002550500000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x67a04a]
+V  [jvm.dll+0x7da4ed]
+V  [jvm.dll+0x7dbe33]
+V  [jvm.dll+0x7dc4a3]
+V  [jvm.dll+0x24508f]
+V  [jvm.dll+0x677089]
+V  [jvm.dll+0x66bd32]
+V  [jvm.dll+0x301fa6]
+V  [jvm.dll+0x309546]
+V  [jvm.dll+0x359d2e]
+V  [jvm.dll+0x359f5f]
+V  [jvm.dll+0x2d9078]
+V  [jvm.dll+0x2d9fe4]
+V  [jvm.dll+0x7aca21]
+V  [jvm.dll+0x367591]
+V  [jvm.dll+0x78b999]
+V  [jvm.dll+0x3ec83f]
+V  [jvm.dll+0x3ee471]
+C  [cyvrtrap.dll+0x15350]
+C  [jli.dll+0x5297]
+C  [ucrtbase.dll+0x37b0]
+C  [cyinjct.dll+0x11e7]
+C  [KERNEL32.DLL+0x2e8d7]
+C  [ntdll.dll+0x3c34c]
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ffc7b1d7a18, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x00000223fb8a0780 GCTaskThread "GC Thread#0" [stack: 0x0000002550500000,0x0000002550600000] [id=28204]
+  0x00000223d9b7d3d0 ConcurrentGCThread "G1 Main Marker" [stack: 0x0000002550600000,0x0000002550700000] [id=35100]
+  0x00000223d9b7ed00 ConcurrentGCThread "G1 Conc#0" [stack: 0x0000002550700000,0x0000002550800000] [id=18936]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffc7aa09b67]
+
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00000223d9afcda0] Heap_lock - owner thread: 0x00000223d9b00380
+
+Heap address: 0x0000000604c00000, size: 8116 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 1.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+<Empty>
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x0000000604c00000, 0x0000000800000000)
+  region size 4096K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffc7adf3859]
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Events (1 events):
+Event: 0.027 Loaded shared library C:\Program Files\Java\jdk-17\bin\java.dll
+
+
+Dynamic libraries:
+0x00007ff7f76e0000 - 0x00007ff7f76f0000 	C:\Program Files\Java\jdk-17\bin\java.exe
+0x00007ffd43240000 - 0x00007ffd434a5000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ffd42f60000 - 0x00007ffd43029000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ffd42b70000 - 0x00007ffd42f58000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x0000000071240000 - 0x000000007127d000 	C:\WINDOWS\System32\cyinjct.dll
+0x00007ffd42a00000 - 0x00007ffd42a09000 	C:\WINDOWS\System32\ntnativeapi.dll
+0x00007ffceff30000 - 0x00007ffceff49000 	C:\Program Files\Java\jdk-17\bin\jli.dll
+0x00007ffd41ae0000 - 0x00007ffd41b93000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ffd42850000 - 0x00007ffd428f9000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ffd40b50000 - 0x00007ffd40bf6000 	C:\WINDOWS\System32\sechost.dll
+0x00007ffd42a50000 - 0x00007ffd42b65000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00000223d7470000 - 0x00000223d763a000 	C:\WINDOWS\System32\USER32.dll
+0x00007ffd408a0000 - 0x00007ffd408c7000 	C:\WINDOWS\System32\win32u.dll
+0x00007ffd41fe0000 - 0x00007ffd4200b000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ffd40960000 - 0x00007ffd40a97000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ffd40460000 - 0x00007ffd40503000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00000223d7640000 - 0x00000223d778b000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ffcef990000 - 0x00007ffcef9ab000 	C:\Program Files\Java\jdk-17\bin\VCRUNTIME140.dll
+0x00007ffd21430000 - 0x00007ffd216ca000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.4202_none_3e0698d4e335f517\COMCTL32.dll
+0x00007ffd21a80000 - 0x00007ffd21a8b000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ffd429d0000 - 0x00007ffd429f4000 	C:\WINDOWS\System32\cyvera.dll
+0x00007ffd42940000 - 0x00007ffd429ce000 	C:\WINDOWS\System32\cyvrtrap.dll
+0x00007ffd41c20000 - 0x00007ffd41c50000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ffcf6be0000 - 0x00007ffcf6bec000 	C:\Program Files\Java\jdk-17\bin\vcruntime140_1.dll
+0x00007ffc7cb40000 - 0x00007ffc7cbce000 	C:\Program Files\Java\jdk-17\bin\msvcp140.dll
+0x00007ffc7a720000 - 0x00007ffc7b300000 	C:\Program Files\Java\jdk-17\bin\server\jvm.dll
+0x00007ffd42610000 - 0x00007ffd42618000 	C:\WINDOWS\System32\PSAPI.DLL
+0x00007ffd167a0000 - 0x00007ffd167aa000 	C:\WINDOWS\SYSTEM32\WSOCK32.dll
+0x00007ffd41d60000 - 0x00007ffd41dd4000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ffd352b0000 - 0x00007ffd352e5000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ffd3ee90000 - 0x00007ffd3eeab000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+0x00007ffcefcf0000 - 0x00007ffcefcfa000 	C:\Program Files\Java\jdk-17\bin\jimage.dll
+0x00007ffd3d740000 - 0x00007ffd3d981000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ffd42280000 - 0x00007ffd42605000 	C:\WINDOWS\System32\combase.dll
+0x00007ffd417f0000 - 0x00007ffd418d1000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007ffd21990000 - 0x00007ffd219c9000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ffd403c0000 - 0x00007ffd40459000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ffd42900000 - 0x00007ffd4293e000 	C:\Program Files\Palo Alto Networks\Traps\cyjagent.dll
+0x00007ffc9bd20000 - 0x00007ffc9bd45000 	C:\Program Files\Java\jdk-17\bin\java.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Program Files\Java\jdk-17\bin;C:\WINDOWS\SYSTEM32;C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.4202_none_3e0698d4e335f517;C:\Program Files\Java\jdk-17\bin\server;C:\Program Files\Palo Alto Networks\Traps
+
+VM Arguments:
+jvm_args: -agentpath:C:\Program Files\Palo Alto Networks\Traps\cyjagent.dll 
+java_command: <unknown>
+java_class_path (initial): <not set>
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}
+     uint ConcGCThreads                            = 3                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 10                                        {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 4194304                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 532676608                                 {product} {ergonomic}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 8510242816                                {product} {ergonomic}
+   size_t MinHeapDeltaBytes                        = 4194304                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 8388608                                   {product} {ergonomic}
+    uintx NonNMethodCodeHeapSize                   = 5839372                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122909434                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122909434                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 8510242816                             {manageable} {ergonomic}
+     bool UseCompressedClassPointers               = true                           {product lp64_product} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+PATH=C:\Users\alarrea\Desktop\project\7\app-movil\node_modules\.bin;C:\Users\alarrea\Desktop\project\7\app-movil\node_modules\.bin;C:\Users\alarrea\Desktop\project\7\node_modules\.bin;C:\Users\alarrea\Desktop\project\node_modules\.bin;C:\Users\alarrea\Desktop\node_modules\.bin;C:\Users\alarrea\node_modules\.bin;C:\Users\node_modules\.bin;C:\node_modules\.bin;C:\Users\alarrea\AppData\Roaming\npm\node_modules\npm\node_modules\@npmcli\run-script\lib\node-gyp-bin;C:\Program Files\Common Files\Oracle\Java\javapath;C:\Program Files\Eclipse Adoptium\jdk-21.0.6.7-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\dotnet\;C:\Program Files (x86)\Microsoft Dynamics AX\60\Client\Bin\;C:\Program Files\Microsoft SQL Server\150\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\nodejs\;C:\Program Files\gradle-8.13-bin\gradle-8.13\bin;C:\Users\alarrea\AppData\Local\Android\Sdk;C:\Users\alarrea\AppData\Local\Android\Sdk\platform-tools;C:\Users\alarrea\AppData\Local\Android\Sdk\Sdk\platform-tools;C:\Users\alarrea\AppData\Local\Android\Sdk\Sdk\tools;C:\Users\alarrea\.console-ninja\.bin;C:\Users\alarrea\AppData\Local\Microsoft\WindowsApps;C:\Users\alarrea\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\alarrea\AppData\Local\Programs\Git\cmd;C:\Users\alarrea\.dotnet\tools;C:\Users\alarrea\AppData\Roaming\npm;C:\Users\alarrea\AppData\Local\Programs\Ollama
+USERNAME=alarrea
+LANG=en_US.UTF-8
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 186 Stepping 3, GenuineIntel
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 26100 (10.0.26100.4202)
+OS uptime: 0 days 4:23 hours
+Hyper-V role detected
+
+CPU: total 12 (initial active 12) (6 cores per cpu, 2 threads per core) family 6 model 186 stepping 3 microcode 0x4123, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, sha, fma, vzeroupper, clflush, clflushopt, clwb, hv
+
+Memory: 4k page, system-wide physical 32452M (4222M free)
+TotalPageFile size 35881M (AvailPageFile size 362M)
+current process WorkingSet (physical memory assigned to process): 14M, peak: 14M
+current process commit charge ("private bytes"): 67M, peak: 575M
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (17.0.12+8-LTS-286) for windows-amd64 JRE (17.0.12+8-LTS-286), built on Jun  5 2024 06:46:59 by "mach5one" with MS VC++ 17.6 (VS2022)
+
+END.

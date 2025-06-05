@@ -131,10 +131,6 @@ const HomeScreen = () => {
   return (
     <>
       <SafeAreaView style={[styles.container, { backgroundColor: "#fff", flex: 1 }]}> 
-        {/* Título principal */}
-        <Text style={{ fontSize: 22, fontWeight: "bold", color: redStrong, textAlign: "center", marginTop: 16, marginBottom: 8 }}>
-          Órdenes de transporte
-        </Text>
         {/* Loading */}
         {loading && (
           <View style={{ marginVertical: 12 }}>

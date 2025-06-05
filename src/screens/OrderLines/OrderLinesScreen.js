@@ -1,15 +1,16 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import { BackHandler, Text, View } from "react-native";
+import { BackHandler, View } from "react-native";
 import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import styles from "./style";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
 import { useNavigation } from "@react-navigation/native";
-import Icon from "react-native-vector-icons/MaterialIcons";
+import Icon from "react-native-vector-icons/AntDesign";
+import Icon2 from "react-native-vector-icons/MaterialCommunityIcons";
 import DeliverOrderBtn from "../../components/Buttons/DeliverOrderBtn";
 import Documents from "../../components/LineDocument/Documents";
 import Loading from "../../components/Loading/Loading";
 import LineDetail from "../../components/OrderLines/LineDetail";
-import { redStrong, redLife } from "../../constants/color";
+import { redLife } from "../../constants/color";
 
 const OrderLines = ({ route }) => {
   const { order } = route.params;
@@ -51,7 +52,7 @@ const OrderLines = ({ route }) => {
     navigation.setOptions({
       headerLeft: () => (
         <Icon
-          name="arrow-back"
+          name="left"
           color={"black"}
           size={25}
           style={{
@@ -67,8 +68,8 @@ const OrderLines = ({ route }) => {
       setallowAcctions(true);
       navigation.setOptions({
         headerRight: () => (
-          <Icon
-            name="notifications-active"
+          <Icon2
+            name="bell-alert"
             color={redLife}
             size={35}
             style={{
@@ -79,8 +80,6 @@ const OrderLines = ({ route }) => {
           />
         ),
       });
-    } else {
-      navigation.setOptions({ headerRight: undefined });
     }
   }, [navigation]);
 
@@ -98,51 +97,53 @@ const OrderLines = ({ route }) => {
     return () => backHandler.remove();
   }, []);
 
+  // useEffect(() => {
+  //   const fetchData2 = async () => {
+  //     if (update) {
+  //       setloading(true);
+  //       await getOrderLine(company, transportOrder.orderId);
+  //     }
+  //   };
+  //   fetchData2();
+  // }, [update]);
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View
-        style={{
-          backgroundColor: redLife,
-          borderRadius: 20,
-          padding: 20,
-          margin: 20,
-          shadowColor: redStrong,
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-          elevation: 4,
-        }}
-      >
-        <Icon
-          name="list-alt"
-          size={48}
-          color={redStrong}
-          style={{
-            alignSelf: "center",
-            marginBottom: 12,
-          }}
-        />
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 24,
-            fontWeight: "bold",
-            marginBottom: 8,
-            textAlign: "center",
-          }}
-        >
-          Detalles de la Orden: {order.orderId}
-        </Text>
-        <LineDetail order={order} />
-        <Documents order={order} />
-        {loading && <Loading loading={loading} />}
-        <View style={{ marginTop: 20 }}>
-          <DeliverOrderBtn
-            onPress={fnDeliverOrder}
-            textBtn={"Entregar Orden"}
-            color={redStrong}
-          />
-        </View>
-      </View>
+    <View style={styles.root}>
+      {loading ? (
+        <Loading loading={loading} />
+      ) : (
+        <>
+          {orderLines.length > 0 && (
+            <>
+              <View height="35%" style={[styles.container]}>
+                <LineDetail
+                  orderLines={orderLines}
+                  orderLineStates={orderLineStates}
+                />
+              </View>
+              <View
+                height={allowAcctions ? "74%" : "82%"}
+                style={[styles.container]}
+              >
+                <Documents
+                  company={company}
+                  recId={orderLines[0].recId}
+                  recIdOV={orderLines[0].recIdOV}
+                />
+              </View>
+              <View height="10%" paddingVertical={10} marginHorizontal={16}>
+                {allowAcctions && (
+                  <DeliverOrderBtn
+                    onPress={fnDeliverOrder}
+                    textBtn={"Entregar orden"}
+                    color={redLife}
+                  />
+                )}
+              </View>
+            </>
+          )}
+        </>
+      )}
     </View>
   );
 };

@@ -2,15 +2,6 @@ import React, { memo } from "react";
 import styles from "./style";
 import { Text, View } from "react-native";
 
-const formatDate = (date) => {
-  if (!date) return "-";
-  const d = new Date(date);
-  const month = '' + (d.getMonth() + 1);
-  const day = '' + d.getDate();
-  const year = d.getFullYear();
-  return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
-};
-
 const LineDetail = ({ orderLines, orderLineStates }) => {
   if (!orderLines || orderLines.length === 0) {
     return (
@@ -38,10 +29,6 @@ const LineDetail = ({ orderLines, orderLineStates }) => {
         <View style={styles.column}>
           <Text style={styles.subTitle}>Estado:</Text>
           <Text style={styles.text}>{estado}</Text>
-        </View>
-        <View style={styles.column}>
-          <Text style={styles.subTitle}>Fecha:</Text>
-          <Text style={styles.text}>{formatDate(firstLine.date)}</Text>
         </View>
       </View>
     </View>

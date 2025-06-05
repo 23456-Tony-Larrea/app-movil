@@ -1,15 +1,14 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import { Alert, BackHandler, Text, View } from "react-native";
+import { Alert, BackHandler, View } from "react-native";
 import DeliverOrder from "../../components/DeliverOrder/DeliverOrder";
 import { useNavigation } from "@react-navigation/native";
 import DeliverOrderBtn from "../../components/Buttons/DeliverOrderBtn";
-import { redStrong, redLife } from "../../constants/color";
+import { grey, redLife } from "../../constants/color";
 import styles from "./style";
 import Loading from "../../components/Loading/Loading";
 import Success from "../../components/Success/Success";
 import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
-import Icon from "react-native-vector-icons/MaterialIcons";
 
 const DeliverOrderScreen = ({ route }) => {
   const { order } = route.params;
@@ -98,49 +97,33 @@ const DeliverOrderScreen = ({ route }) => {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={styles.main}>
+      {wait && <Loading loading={wait} opacity={0.15} sizeIcon={50} />}
+      {success && <Success success={success} opacity={0.7} />}
+      <DeliverOrder
+        order={order}
+        isEnabled={isEnabled}
+        setIsEnabled={setIsEnabled}
+        comment={comment}
+        setcomment={setcomment}
+      />
       <View
-        style={{
-          backgroundColor: redLife,
-          borderRadius: 20,
-          padding: 20,
-          margin: 20,
-          shadowColor: redStrong,
-          shadowOpacity: 0.15,
-          shadowRadius: 8,
-          elevation: 4,
-        }}
+        pointerEvents={
+          (isEnabled && comment.length > 0) || isEnabled === false
+            ? "auto"
+            : "none"
+        }
+        style={styles.btnDeliverOrder}
       >
-        <Icon
-          name="check-circle"
-          size={48}
-          color={redStrong}
-          style={{
-            alignSelf: "center",
-            marginBottom: 12,
-          }}
+        <DeliverOrderBtn
+          onPress={fnDeliverOrder}
+          textBtn={"Entregar"}
+          color={
+            (isEnabled && comment.length > 0) || isEnabled === false
+              ? redLife
+              : "grey"
+          }
         />
-        <Text
-          style={{
-            color: "#fff",
-            fontSize: 24,
-            fontWeight: "bold",
-            marginBottom: 8,
-            textAlign: "center",
-          }}
-        >
-          Entregar Orden
-        </Text>
-        <DeliverOrder order={order} />
-        {wait && <Loading loading={wait} />}
-        {success && <Success success={success} />}
-        <View style={{ marginTop: 20 }}>
-          <DeliverOrderBtn
-            onPress={fnDeliverOrder}
-            textBtn={"Confirmar Entrega"}
-            color={redStrong}
-          />
-        </View>
       </View>
     </View>
   );
