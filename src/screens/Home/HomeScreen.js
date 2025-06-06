@@ -11,6 +11,7 @@ import Loading from "../../components/Loading/Loading";
 import { numTransportOrders } from "../../constants/config";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { redStrong, redLife } from "../../constants/color";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = () => {
   const [loadingLocal, setloadingLocal] = useState(false);
@@ -26,6 +27,7 @@ const HomeScreen = () => {
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   // Nuevo filtro para ordenar por fecha más actual a más baja
   const [sortDesc, setSortDesc] = useState(true);
+  const [orderLines, setOrderLines] = useState([]);
 
   const {
     company,
@@ -127,6 +129,17 @@ const HomeScreen = () => {
     const year = d.getFullYear();
     return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
   }
+
+  useEffect(() => {
+    // Cargar las últimas líneas de orden guardadas (si existen)
+    const loadOrderLines = async () => {
+      const lastOrderLines = await AsyncStorage.getItem('lastOrderLines');
+      if (lastOrderLines) {
+        setOrderLines(JSON.parse(lastOrderLines));
+      }
+    };
+    loadOrderLines();
+  }, []);
 
   return (
     <>

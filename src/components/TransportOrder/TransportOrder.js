@@ -6,7 +6,6 @@ import styles from "./style";
 import { useNavigation } from "@react-navigation/native";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
 import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
-import SalesOrdersList from "./SalesOrdersList";
 
 const orderStatus = [
   {
@@ -83,11 +82,6 @@ const Order = ({ order }) => {
               : "-"}
           </Text>
         </View>
-      </View>
-
-      {/* Renderiza los Sales Order ID de la orden específica */}
-      <View style={styles.row}>
-        <SalesOrdersList orderLines={order.orderLines} />
       </View>
 
       {order.status === "0" && (

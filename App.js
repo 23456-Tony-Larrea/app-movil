@@ -6,17 +6,20 @@ import MainStack from "./src/routes/MainStack";
 import TransportOrderState from "./src/context/TransportOrder/TransportOrderState";
 import OrderLineState from "./src/context/TransportOrderLines/OrderLineState";
 import Login from "./src/login/login";
+import { NavigationContainer } from "@react-navigation/native";
 
 export default function App() {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <NavigationContainer>
       <TransportOrderState>
         <OrderLineState>
-          {/* <MainStack /> */}
-          <Login />
+          <SafeAreaView style={{ flex: 1 }}>
+            {/* <MainStack /> */}
+            <Login />
+          </SafeAreaView>
         </OrderLineState>
       </TransportOrderState>
-    </SafeAreaView>
+    </NavigationContainer>
   );
 }
 
