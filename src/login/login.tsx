@@ -15,6 +15,7 @@ import {
   Image,
 } from "react-native";
 import type { MSALResult, MSALWebviewParams } from "react-native-msal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { B2CClient } from "./b2cClient";
 import { b2cConfig, b2cScopes as scopes } from "./msalConfig";
@@ -53,6 +54,8 @@ export default function Login() {
       setAuthResult(res);
       if (res && res.accessToken) {
         console.log('MSAL Access Token:', res.accessToken);
+        // Guardar el token en AsyncStorage
+        await AsyncStorage.setItem("@msalToken", res.accessToken);
       }
     } catch (error) {
       console.warn(error);

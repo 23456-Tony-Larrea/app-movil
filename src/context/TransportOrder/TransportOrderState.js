@@ -26,7 +26,7 @@ const TransportOrderState = (props) => {
 
   const getTransportOrders = async (status, startPosition, numOfRecords) => {
     try {
-      console.log(state.company);
+      const token = await AsyncStorage.getItem("@msalToken");
       let localUrl =
         baseUrl +
         "api/TransportOrder/get?company=" +
@@ -41,7 +41,9 @@ const TransportOrderState = (props) => {
       if (numOfRecords) {
         localUrl = localUrl + "&numOfRecords=" + numOfRecords;
       }
-      const response1 = await fetch(localUrl);
+      const response1 = await fetch(localUrl, {
+        headers: token ? { "Authorization": `Bearer ${token}` } : undefined,
+      });
       if (response1.status === 200) {
         const data = await response1.json();
         dispatch({
@@ -59,6 +61,7 @@ const TransportOrderState = (props) => {
   };
   const postTransportOrderChecker = async (orderId) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let resp = false;
       const postData = {
         company: state.company,
@@ -71,6 +74,7 @@ const TransportOrderState = (props) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(postData),
       });
@@ -95,6 +99,7 @@ const TransportOrderState = (props) => {
   };
   const postCheckDelivered = async (dataSend, sendEmail) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let resp = false;
       let localUrl =
         baseUrl + "api/TransportOrder/checkerDelivery?sendEmail=" + sendEmail;
@@ -103,6 +108,7 @@ const TransportOrderState = (props) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(dataSend),
       });

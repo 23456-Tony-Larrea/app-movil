@@ -22,16 +22,16 @@ const OrderLineState = (props) => {
 
   const getOrderLine = async (company, orderId) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let localUrl =
         baseUrl +
         "api/OrderLine/get?company=" +
         company +
         "&orderId=" +
         orderId;
-      // "https://appentregas.life.com.ec/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=3";
-      // "https://lisvdsewe.life.com.ec:4401/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=2";
-
-      const response1 = await fetch(localUrl);
+      const response1 = await fetch(localUrl, {
+        headers: token ? { "Authorization": `Bearer ${token}` } : undefined,
+      });
       if (response1.status === 200) {
         const data = await response1.json();
         dispatch({
@@ -40,15 +40,12 @@ const OrderLineState = (props) => {
         });
       }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
   };
   const getDocumentation = async (company, recId, recIdOV) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let localUrl =
         baseUrl +
         "api/Document/get?company=" +
@@ -57,37 +54,35 @@ const OrderLineState = (props) => {
         recId +
         "&recIdOV=" +
         recIdOV;
-      const response1 = await fetch(localUrl);
+      const response1 = await fetch(localUrl, {
+        headers: token ? { "Authorization": `Bearer ${token}` } : undefined,
+      });
       if (response1.status === 200) {
         const data = await response1.json();
         data.sort((a, b) => {
           return b.mandatory - a.mandatory;
         });
-
         dispatch({
           type: ORDERLINE.DOCUMENTATION,
           payload: { data: data, loading: false, update: false },
         });
       }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
   };
   const getBase64Doc = async (document) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let localUrl = baseUrl + "api/Document/base64";
       const response1 = await fetch(localUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(document),
       });
-
       if (response1.status === 200) {
         const data = await response1.json();
         return data.base64;
@@ -100,12 +95,13 @@ const OrderLineState = (props) => {
   };
   const postSPDocumentation = async (dataSP) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let localUrl = baseUrl + "api/Document/postSP";
-
       const response = await fetch(localUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(dataSP),
       });
@@ -115,22 +111,15 @@ const OrderLineState = (props) => {
           return data[0].url;
         }
         return "";
-        // dispatch({
-        //   type: ORDERLINE.DOCUMENTATION,
-        //   payload: { data: data, loading: false },
-        // });
       }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return "";
     }
   };
   const postNewSPDocumentation = async (dataSP) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let resp = "";
       let localUrl = baseUrl + "api/Document";
       let response = await fetch(localUrl, {
@@ -138,6 +127,7 @@ const OrderLineState = (props) => {
         body: dataSP,
         headers: {
           "Content-Type": "multipart/form-data",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
       });
       if (response.status === 200) {
@@ -151,12 +141,14 @@ const OrderLineState = (props) => {
   };
   const postAXDocumentation = async (dataSend, company) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let ret = 0;
       let localUrl = baseUrl + "api/Document/postAX?company=" + company;
       const response = await fetch(localUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(dataSend),
       });
@@ -171,11 +163,11 @@ const OrderLineState = (props) => {
             dataSend.recIdRecord +
             "&status=1&attachRecId=" +
             data;
-          console.log(localUrl);
           const response2 = await fetch(localUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              ...(token ? { "Authorization": `Bearer ${token}` } : {}),
             },
           });
           if (response2.status === 200) {
@@ -185,10 +177,6 @@ const OrderLineState = (props) => {
       }
       return ret;
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
@@ -200,6 +188,7 @@ const OrderLineState = (props) => {
     attachRecId
   ) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let ret = 0;
       let localUrl =
         baseUrl +
@@ -211,11 +200,11 @@ const OrderLineState = (props) => {
         status +
         "&attachRecId=" +
         attachRecId;
-      console.log(localUrl);
       const response2 = await fetch(localUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
       });
       if (response2.status === 200) {
@@ -223,16 +212,13 @@ const OrderLineState = (props) => {
       }
       return ret;
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
   };
   const postPanicNotification = async (company, comment) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       if (comment === "") {
         comment = "n/a";
       }
@@ -255,11 +241,11 @@ const OrderLineState = (props) => {
         emailPanicNotification +
         "&company=" +
         company;
-      console.log(localUrl);
       const response = await fetch(localUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(data),
       });
@@ -269,30 +255,24 @@ const OrderLineState = (props) => {
       });
       return await response.json();
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Error al enviar la notificación de pánico. " + error);
     }
   };
   const deleteSPDocumentation = async (url) => {
     try {
+      const token = await AsyncStorage.getItem("@msalToken");
       let resp = false;
       let localUrl = baseUrl + "api/Document/delete";
-      console.log(url);
       let response = await fetch(localUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(url),
       });
-      console.log(response.status);
       if (response.status === 200) {
         resp = await response.json();
-        console.log("eliminar");
-        console.log(resp);
       }
       return resp;
     } catch (error) {
