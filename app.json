@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "entregaslife",
+    "slug": "entregaslife",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Aplicación de entregas",
+          "cameraPermission": "Aplicación de entregas"
+        }
+      ],
+      [
+        "react-native-msal",
+        {
+          "androidPackageSignatureHash": "2jmj7l5rSw0yVb/vlWAYkK/YBwk=" // ex: "Xo8WBi6jzSxKDVR4drqm84yr9iU="
+        }
+      ]
+    ],
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "com.life.entregaslife",
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.life.entregaslife"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5a38d5ad-6c64-4705-800a-eff43fffaaa7"
+      }
+    }
+  }
+}
