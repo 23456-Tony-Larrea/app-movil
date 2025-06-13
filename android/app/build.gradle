@@ -113,7 +113,7 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.entregaslife"
+    namespace "com.life.entregaslife"
     defaultConfig {
         applicationId 'com.life.entregaslife'
         minSdkVersion rootProject.ext.minSdkVersion

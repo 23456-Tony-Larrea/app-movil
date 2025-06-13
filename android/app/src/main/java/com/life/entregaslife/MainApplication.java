@@ -64,7 +64,16 @@ public class MainApplication extends Application implements ReactApplication {
       // If you opted-in for the New Architecture, we load the native entry point for this app.
       DefaultNewArchitectureEntryPoint.load();
     }
-    ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
+    if (BuildConfig.DEBUG) {
+      try {
+        Class<?> flipperClass = Class.forName("com.life.entregaslife.ReactNativeFlipper");
+        flipperClass
+          .getMethod("initializeFlipper", android.content.Context.class, com.facebook.react.ReactInstanceManager.class)
+          .invoke(null, this, getReactNativeHost().getReactInstanceManager());
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
   }
 

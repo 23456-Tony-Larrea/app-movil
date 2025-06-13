@@ -15,6 +15,7 @@ import {
   Image,
 } from "react-native";
 import type { MSALResult, MSALWebviewParams } from "react-native-msal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { B2CClient } from "./b2cClient";
 import { b2cConfig, b2cScopes as scopes } from "./msalConfig";
@@ -37,10 +38,8 @@ export default function Login() {
     async function init() {
       try {
         await b2cClient.init();
-        const isSignedIn = await b2cClient.isSignedIn();
-        if (isSignedIn) {
-          setAuthResult(await b2cClient.acquireTokenSilent({ scopes }));
-        }
+        await b2cClient.signOut(); // Cierra sesión cada vez que se refresca la app
+        setAuthResult(null);
       } catch (error) {
         console.error(error);
       }
@@ -49,11 +48,19 @@ export default function Login() {
   }, []);
 
   const handleSignInPress = async () => {
+    setloadingLocal(true);
     try {
       const res = await b2cClient.signIn({ scopes, webviewParameters });
       setAuthResult(res);
+      if (res && res.accessToken) {
+        console.log('MSAL Access Token:', res.accessToken);
+        // Guardar el token en AsyncStorage
+        await AsyncStorage.setItem("@msalToken", res.accessToken);
+      }
     } catch (error) {
       console.warn(error);
+    } finally {
+      setloadingLocal(false);
     }
   };
 
@@ -85,19 +92,32 @@ export default function Login() {
       )}
       {/* {!true ? ( */}
       {authResult ? (
-        <MainStack />
-      ) : (
+         <MainStack />
+         ) : (
         <>
           <View style={styles.container}>
             <View
               style={{
-                width: "60%",
-                height: "70%",
+                width: 180,
+                height: 180,
+                borderRadius: 90,
+                backgroundColor: "#fff", // avatar fondo blanco
                 justifyContent: "center",
                 alignItems: "center",
+                marginBottom: 24,
+                shadowColor: redLife,
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: 2,
+                borderColor: "#fff"
               }}
             >
-              <Image source={require("../../assets/Life83.gif")} />
+              <Image
+                source={require("../../assets/LIFE.png")}
+                style={{ width: 170, height: 170, borderRadius: 85, backgroundColor: "#fff" }}
+                resizeMode="contain"
+              />
             </View>
             <TouchableOpacity
               style={[styles.btnDeliverOrder]}
