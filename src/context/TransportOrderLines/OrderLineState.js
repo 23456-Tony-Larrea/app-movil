@@ -20,6 +20,30 @@ const OrderLineState = (props) => {
 
   const [state, dispatch] = useReducer(OrderLineReducer, initialState);
 
+  // Función auxiliar para obtener el token MSAL
+  const getMSALToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem("@msalToken");
+      return token;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Función auxiliar para crear headers con Bearer token
+  const createAuthHeaders = async (additionalHeaders = {}) => {
+    const token = await getMSALToken();
+    const headers = {
+      ...additionalHeaders,
+    };
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
+
   const getOrderLine = async (company, orderId) => {
     try {
       let localUrl =
@@ -28,10 +52,14 @@ const OrderLineState = (props) => {
         company +
         "&orderId=" +
         orderId;
-      // "https://appentregas.life.com.ec/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=3";
-      // "https://lisvdsewe.life.com.ec:4401/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=2";
-
-      const response1 = await fetch(localUrl);
+      
+      const headers = await createAuthHeaders();
+      
+      const response1 = await fetch(localUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
       if (response1.status === 200) {
         const data = await response1.json();
         dispatch({
@@ -40,10 +68,6 @@ const OrderLineState = (props) => {
         });
       }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
   };
@@ -57,7 +81,14 @@ const OrderLineState = (props) => {
         recId +
         "&recIdOV=" +
         recIdOV;
-      const response1 = await fetch(localUrl);
+      
+      const headers = await createAuthHeaders();
+      
+      const response1 = await fetch(localUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
       if (response1.status === 200) {
         const data = await response1.json();
         data.sort((a, b) => {
@@ -70,24 +101,23 @@ const OrderLineState = (props) => {
         });
       }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
   };
   const getBase64Doc = async (document) => {
     try {
       let localUrl = baseUrl + "api/Document/base64";
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
+      
       const response1 = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(document),
       });
-
+      
       if (response1.status === 200) {
         const data = await response1.json();
         return data.base64;
@@ -101,30 +131,25 @@ const OrderLineState = (props) => {
   const postSPDocumentation = async (dataSP) => {
     try {
       let localUrl = baseUrl + "api/Document/postSP";
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
 
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(dataSP),
       });
+      
       if (response.status === 200) {
         const data = await response.json();
         if (data && data[0] && data[0].url) {
           return data[0].url;
         }
         return "";
-        // dispatch({
-        //   type: ORDERLINE.DOCUMENTATION,
-        //   payload: { data: data, loading: false },
-        // });
       }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return "";
     }
@@ -133,13 +158,17 @@ const OrderLineState = (props) => {
     try {
       let resp = "";
       let localUrl = baseUrl + "api/Document";
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "multipart/form-data",
+      });
+      
       let response = await fetch(localUrl, {
         method: "POST",
         body: dataSP,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: headers,
       });
+      
       if (response.status === 200) {
         resp = await response.text();
       }
@@ -153,13 +182,17 @@ const OrderLineState = (props) => {
     try {
       let ret = 0;
       let localUrl = baseUrl + "api/Document/postAX?company=" + company;
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
+      
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(dataSend),
       });
+      
       if (response.status === 200) {
         const data = await response.json();
         if (data && data > 0) {
@@ -171,13 +204,16 @@ const OrderLineState = (props) => {
             dataSend.recIdRecord +
             "&status=1&attachRecId=" +
             data;
-          console.log(localUrl);
+          
+          const headers2 = await createAuthHeaders({
+            "Content-Type": "application/json",
+          });
+          
           const response2 = await fetch(localUrl, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: headers2,
           });
+          
           if (response2.status === 200) {
             ret = await response2.json();
           }
@@ -185,10 +221,6 @@ const OrderLineState = (props) => {
       }
       return ret;
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
@@ -211,22 +243,21 @@ const OrderLineState = (props) => {
         status +
         "&attachRecId=" +
         attachRecId;
-      console.log(localUrl);
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
+      
       const response2 = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
       });
+      
       if (response2.status === 200) {
         ret = await response2.json();
       }
       return ret;
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
@@ -247,24 +278,29 @@ const OrderLineState = (props) => {
         emailPanicNotification +
         "&company=" +
         company;
-      console.log(localUrl);
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
+      
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(data),
       });
+      
       dispatch({
         type: ORDERLINE.LOADING,
         payload: false,
       });
-      return await response.json();
+      
+      if (response.status === 200) {
+        const result = await response.json();
+        return result;
+      } else {
+        return null;
+      }
     } catch (error) {
-      // dispatch({
-      //   type: TRANSPORTORDER.ERROR,
-      //   payload: true,
-      // });
       alert("Error al enviar la notificación de pánico. " + error);
     }
   };
@@ -272,19 +308,19 @@ const OrderLineState = (props) => {
     try {
       let resp = false;
       let localUrl = baseUrl + "api/Document/delete";
-      console.log(url);
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
+      
       let response = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(url),
       });
-      console.log(response.status);
+      
       if (response.status === 200) {
         resp = await response.json();
-        console.log("eliminar");
-        console.log(resp);
       }
       return resp;
     } catch (error) {

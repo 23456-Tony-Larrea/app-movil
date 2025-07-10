@@ -4,6 +4,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import styles from "./style";
 import globalStyles from "../../global/style";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
+import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import Order from "../../components/TransportOrder/TransportOrder";
 import ModalFilterOrder from "../../components/FilterOrder/FilterOrder";
 import BtnFilterOrder from "../../components/Buttons/FilterOrderBtn";
@@ -28,6 +29,8 @@ const HomeScreen = () => {
   // Nuevo filtro para ordenar por fecha más actual a más baja
   const [sortDesc, setSortDesc] = useState(true);
   const [orderLines, setOrderLines] = useState([]);
+  // Estado para controlar qué órdenes tienen OV expandidas
+  const [expandedOrders, setExpandedOrders] = useState({});
 
   const {
     company,
@@ -39,6 +42,13 @@ const HomeScreen = () => {
     setloading,
     getTransportOrders,
   } = useContext(TransportOrderContext);
+
+  // Contexto para OrderLines (OV)
+  const {
+    orderLines: contextOrderLines,
+    loading: orderLinesLoading,
+    getOrderLine,
+  } = useContext(OrderLineContext);
 
   const fnSetdataList = useCallback((value) => {
     setdataList(value);
@@ -141,6 +151,157 @@ const HomeScreen = () => {
     loadOrderLines();
   }, []);
 
+  // Función para expandir/colapsar OV de una OT
+  const toggleOrderLines = async (orderId) => {
+    const isExpanded = expandedOrders[orderId];
+    
+    if (isExpanded) {
+      // Colapsar: remover de expandedOrders
+      setExpandedOrders(prev => {
+        const newExpanded = { ...prev };
+        delete newExpanded[orderId];
+        return newExpanded;
+      });
+    } else {
+      // Expandir: cargar OV y agregar a expandedOrders
+      try {
+        await getOrderLine(company, orderId);
+        setExpandedOrders(prev => ({
+          ...prev,
+          [orderId]: true
+        }));
+      } catch (error) {
+        alert("Error al cargar las líneas de orden: " + error);
+      }
+    }
+  };
+
+  // Función para renderizar una OV (OrderLine)
+  const renderOrderLine = (orderLine, index) => (
+    <View key={`${orderLine.salesOrderId}-${orderLine.lineNum || index}`} style={{
+      backgroundColor: "#f8f9fa",
+      marginLeft: 20,
+      marginTop: 5,
+      marginBottom: 5,
+      padding: 15,
+      borderRadius: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: redLife,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 1,
+    }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+        <Text style={{ fontWeight: "bold", color: redStrong, fontSize: 14 }}>
+          OV: {orderLine.salesOrderId || "N/A"}
+        </Text>
+        <Text style={{ color: "#666", fontSize: 12 }}>
+          Línea: {orderLine.lineNum || index + 1}
+        </Text>
+      </View>
+      
+      <Text style={{ color: "#333", fontSize: 13, marginBottom: 4 }}>
+        Producto: {orderLine.itemName || orderLine.itemId || "N/A"}
+      </Text>
+      
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+        <Text style={{ color: "#666", fontSize: 12 }}>
+          Cantidad: {orderLine.qty || orderLine.quantity || "0"}
+        </Text>
+        <Text style={{ color: "#666", fontSize: 12 }}>
+          Estado: {orderLine.status || orderLine.deliveryStatus || "N/A"}
+        </Text>
+      </View>
+      
+      {orderLine.deliveryDate && (
+        <Text style={{ color: "#666", fontSize: 12, marginTop: 4 }}>
+          Entrega: {new Date(orderLine.deliveryDate).toLocaleDateString()}
+        </Text>
+      )}
+    </View>
+  );
+
+  // Función para renderizar una OT con sus OV
+  const renderTransportOrderWithLines = ({ item: order }) => (
+    <View style={{
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: redStrong,
+      marginBottom: 10,
+      padding: 0,
+      shadowColor: redStrong,
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      elevation: 2,
+      overflow: "hidden"
+    }}>
+      {/* Componente OT original */}
+      <Order order={order} />
+      
+      {/* Botón para expandir/colapsar OV */}
+      <TouchableOpacity
+        onPress={() => toggleOrderLines(order.orderId)}
+        style={{
+          backgroundColor: expandedOrders[order.orderId] ? redLife : "#f0f0f0",
+          padding: 12,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderTopWidth: 1,
+          borderTopColor: "#e0e0e0",
+        }}
+      >
+        <Text style={{ 
+          color: expandedOrders[order.orderId] ? "#fff" : redStrong, 
+          fontWeight: "bold",
+          fontSize: 14
+        }}>
+          {expandedOrders[order.orderId] ? "Ocultar OV" : "Ver OV"}
+        </Text>
+        <Icon 
+          name={expandedOrders[order.orderId] ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+          size={24} 
+          color={expandedOrders[order.orderId] ? "#fff" : redStrong} 
+        />
+      </TouchableOpacity>
+      
+      {/* Lista de OV expandidas */}
+      {expandedOrders[order.orderId] && (
+        <View style={{ backgroundColor: "#f8f9fa", padding: 10 }}>
+          {orderLinesLoading ? (
+            <View style={{ padding: 20, alignItems: "center" }}>
+              <Loading loading={true} sizeIcon={20} />
+              <Text style={{ color: "#666", marginTop: 10 }}>Cargando OV...</Text>
+            </View>
+          ) : contextOrderLines && contextOrderLines.length > 0 ? (
+            <>
+              <Text style={{ 
+                fontWeight: "bold", 
+                color: redStrong, 
+                marginBottom: 10,
+                fontSize: 16
+              }}>
+                Órdenes de Venta ({contextOrderLines.length})
+              </Text>
+              {contextOrderLines.map((orderLine, index) => renderOrderLine(orderLine, index))}
+            </>
+          ) : (
+            <Text style={{ 
+              color: "#666", 
+              textAlign: "center", 
+              padding: 20,
+              fontStyle: "italic"
+            }}>
+              No hay órdenes de venta para esta OT
+            </Text>
+          )}
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <>
       <SafeAreaView style={[styles.container, { backgroundColor: "#fff", flex: 1 }]}> 
@@ -191,7 +352,26 @@ const HomeScreen = () => {
                   <Icon name="clear" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
-              <Button title="Aplicar filtro de fechas" color={redStrong} onPress={filterByDate} />
+              
+              {/* Botón para aplicar filtro de fecha */}
+              <TouchableOpacity
+                onPress={filterByDate}
+                style={{ backgroundColor: redStrong, padding: 10, borderRadius: 8, marginBottom: 10 }}
+              >
+                <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+                  Aplicar filtro de fechas
+                </Text>
+              </TouchableOpacity>
+              
+              {/* Botón para colapsar todas las OV */}
+              <TouchableOpacity
+                onPress={() => setExpandedOrders({})}
+                style={{ backgroundColor: "#666", padding: 10, borderRadius: 8, marginBottom: 10 }}
+              >
+                <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+                  Colapsar todas las OV
+                </Text>
+              </TouchableOpacity>
               {/* DateTimePickers */}
               {showStartDatePicker && (
                 <DateTimePicker
@@ -218,23 +398,7 @@ const HomeScreen = () => {
             </View>
           }
           data={filteredData}
-          renderItem={({ item }) => (
-            <View style={{
-              backgroundColor: "#fff",
-              borderRadius: 16,
-              borderWidth: 2,
-              borderColor: redStrong,
-              marginBottom: 10,
-              padding: 0,
-              shadowColor: redStrong,
-              shadowOpacity: 0.08,
-              shadowRadius: 6,
-              elevation: 2,
-              overflow: "hidden"
-            }}>
-              <Order order={item} />
-            </View>
-          )}
+          renderItem={renderTransportOrderWithLines}
           keyExtractor={(item) => item.orderId}
           ListEmptyComponent={
             <View style={[globalStyles.title, { backgroundColor: "#fff", borderRadius: 10, padding: 24, marginTop: 30, borderWidth: 1, borderColor: redStrong }]}> 

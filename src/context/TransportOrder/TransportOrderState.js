@@ -24,16 +24,38 @@ const TransportOrderState = (props) => {
 
   const [state, dispatch] = useReducer(TransportOrderReducer, initialState);
 
+  // Función auxiliar para obtener el token MSAL
+  const getMSALToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem("@msalToken");
+      return token;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Función auxiliar para crear headers con Bearer token
+  const createAuthHeaders = async (additionalHeaders = {}) => {
+    const token = await getMSALToken();
+    const headers = {
+      ...additionalHeaders,
+    };
+    
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
+
   const getTransportOrders = async (status, startPosition, numOfRecords) => {
     try {
-      console.log(state.company);
       let localUrl =
         baseUrl +
         "api/TransportOrder/get?company=" +
         state.company +
         "&vendAccountNum=1792464463001";
-      // "https://appentregas.life.com.ec/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=3";
-      // "https://lisvdsewe.life.com.ec:4401/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=2";
+      
       if (status) {
         localUrl = localUrl + "&status=" + status;
       }
@@ -43,7 +65,14 @@ const TransportOrderState = (props) => {
       if (numOfRecords) {
         localUrl = localUrl + "&numOfRecords=" + numOfRecords;
       }
-      const response1 = await fetch(localUrl);
+      
+      const headers = await createAuthHeaders();
+      
+      const response1 = await fetch(localUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
       if (response1.status === 200) {
         const data = await response1.json();
         dispatch({
@@ -67,20 +96,25 @@ const TransportOrderState = (props) => {
         orderId: orderId,
         checkerName: "Pruebas desarrollo",
       };
+      
       let localUrl =
         baseUrl + "api/TransportOrder/checker?company=" + state.company;
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
+      
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(postData),
       });
-
+      
       if (response.status === 200) {
         const data = await response.json();
         resp = data;
       }
+      
       dispatch({
         type: TRANSPORTORDER.LOADING,
         payload: false,
@@ -100,18 +134,21 @@ const TransportOrderState = (props) => {
       let resp = false;
       let localUrl =
         baseUrl + "api/TransportOrder/checkerDelivery?sendEmail=" + sendEmail;
+      
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
 
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: JSON.stringify(dataSend),
       });
+      
       if (response.status === 200) {
         resp = await response.json();
-        console.log(resp);
       }
+      
       return resp;
     } catch (error) {
       alert("Hubo un error al cargar los datos: " + error);
