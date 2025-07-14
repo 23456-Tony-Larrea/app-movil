@@ -4,7 +4,7 @@ import { TransportOrderReducer } from "./TransportOrderReducer";
 import { TransportOrderContext } from "./TransportOrderContext";
 import { baseUrl } from "../../constants/config";
 import { TRANSPORTORDER } from "../Types/types";
-// MSAL imports
+import { getUserOid } from "../../utils/oidUtils";
 
 const TransportOrderState = (props) => {
   const initialState = {
@@ -13,6 +13,8 @@ const TransportOrderState = (props) => {
     error: false,
     transportOrders: [],
     transportOrder: {},
+    orderLines: {}, // Estado para las OV vinculadas por recId
+    vendorRuc: null,
     loading: false,
     orderState: "2",
     orderStates: [
@@ -48,13 +50,91 @@ const TransportOrderState = (props) => {
     return headers;
   };
 
+  const getVendorInformation = async () => {
+    try {
+      const userOid = await getUserOid();
+      
+      if (!userOid) {
+        return null;
+      }
+
+      const localUrl = `https://appentregas.life.com.ec/api/VendorInformation/get?localAccountGuId=${userOid}`;
+      
+      const headers = await createAuthHeaders();
+      
+      const response = await fetch(localUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
+      if (response.status === 200) {
+        const vendorData = await response.json();
+        
+        // Extraer solo el RUC y guardarlo en el estado
+        if (vendorData && vendorData.ruc) {
+          dispatch({
+            type: TRANSPORTORDER.VENDORRUC,
+            payload: vendorData.ruc,
+          });
+          return vendorData.ruc;
+        }
+        
+        return null;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      dispatch({
+        type: TRANSPORTORDER.ERROR,
+        payload: true,
+      });
+      return null;
+    }
+  };
+
+  const getOrderLinesByOrderId = async (company, orderId, recId) => {
+    try {
+      const localUrl = `https://appentregas.life.com.ec/api/OrderLine/get?company=${company}&orderId=${orderId}`;
+      
+      const headers = await createAuthHeaders();
+      
+      const response = await fetch(localUrl, {
+        method: "GET",
+        headers: headers,
+      });
+      
+      if (response.status === 200) {
+        const orderLinesData = await response.json();
+        
+        // Guardar las OV usando el recId como clave para el mapeo
+        dispatch({
+          type: TRANSPORTORDER.ORDERLINES,
+          payload: { recId, orderLines: orderLinesData },
+        });
+        
+        return orderLinesData;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      dispatch({
+        type: TRANSPORTORDER.ERROR,
+        payload: true,
+      });
+      return null;
+    }
+  };
+
   const getTransportOrders = async (status, startPosition, numOfRecords) => {
     try {
+      // Usar el RUC del vendedor o un valor por defecto
+      const vendAccountNum = state.vendorRuc || "1792464463001";
+      
       let localUrl =
         baseUrl +
         "api/TransportOrder/get?company=" +
         state.company +
-        "&vendAccountNum=1792464463001";
+        "&vendAccountNum=" + vendAccountNum;
       
       if (status) {
         localUrl = localUrl + "&status=" + status;
@@ -209,6 +289,18 @@ const TransportOrderState = (props) => {
       payload: value,
     });
   }, []);
+  const getOrderLinesForRecId = useCallback((recId) => {
+    const result = state.orderLines[recId] || [];
+    return result;
+  }, [state.orderLines]);
+
+  const clearOrderLines = useCallback(() => {
+    dispatch({
+      type: TRANSPORTORDER.ORDERLINES,
+      payload: { recId: 'CLEAR_ALL', orderLines: {} },
+    });
+  }, []);
+
   const getCurrentCompany = async () => {
     try {
       const value = await AsyncStorage.getItem("@storageCompany");
@@ -233,6 +325,8 @@ const TransportOrderState = (props) => {
         company: state.company,
         transportOrders: state.transportOrders,
         transportOrder: state.transportOrder,
+        orderLines: state.orderLines,
+        vendorRuc: state.vendorRuc,
         error: state.error,
         loading: state.loading,
         orderState: state.orderState,
@@ -245,8 +339,12 @@ const TransportOrderState = (props) => {
         setloading,
         setOrderState,
         setUpdate,
+        clearOrderLines,
         //functions get
         getTransportOrders,
+        getVendorInformation,
+        getOrderLinesByOrderId,
+        getOrderLinesForRecId,
         getCurrentCompany,
         //functions post
         postTransportOrderChecker,

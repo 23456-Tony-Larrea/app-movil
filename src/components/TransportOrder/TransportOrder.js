@@ -1,11 +1,10 @@
-import React, { memo, useContext, useEffect } from "react";
+import React, { memo, useContext } from "react";
 import { View, Text, Pressable } from "react-native";
 import { grey, redLife, redPressed } from "../../constants/color";
 import Icon from "react-native-vector-icons/FontAwesome";
 import styles from "./style";
 import { useNavigation } from "@react-navigation/native";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
-import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 
 const orderStatus = [
   {
@@ -30,13 +29,6 @@ const Order = ({ order }) => {
     setTransportOrder,
     postTransportOrderChecker,
   } = useContext(TransportOrderContext);
-
-  const { getOrderLine, orderLines } = useContext(OrderLineContext); // Consume el contexto de OrderLine
-
-  useEffect(() => {
-    // Llama a getOrderLine cuando el componente se monta o cuando cambia el order.orderId
-    getOrderLine("li", order.orderId);
-  }, [order]);
 
   const fnOrderDetail = async (order) => {
     setTransportOrder(order);
@@ -77,21 +69,6 @@ const Order = ({ order }) => {
         <View style={styles.column}>
           <Text style={styles.subTitle}>Fecha de entrega:</Text>
           <Text style={styles.text}>{order.deliveryDate.substring(0, 10)}</Text>
-        </View>
-      </View>
-
-      {/* Renderiza los Sales Order ID */}
-      <View style={styles.row}>
-        <View style={styles.column}>
-          <Text style={styles.subTitle}>Ordenes de venta:</Text>
-          {orderLines.map((orderLine, index) => (
-            <Text
-              key={index} // Usa un índice como clave, pero considera usar un ID único si está disponible
-              style={styles.text}
-            >
-              {orderLine.salesOrderId}
-            </Text>
-          ))}
         </View>
       </View>
 

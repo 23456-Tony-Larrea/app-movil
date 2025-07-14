@@ -1,10 +1,9 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import { SafeAreaView, FlatList, View, Text, TextInput, Button, TouchableOpacity } from "react-native";
+import { SafeAreaView, FlatList, View, Text, TextInput, TouchableOpacity } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import styles from "./style";
 import globalStyles from "../../global/style";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
-import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import Order from "../../components/TransportOrder/TransportOrder";
 import ModalFilterOrder from "../../components/FilterOrder/FilterOrder";
 import BtnFilterOrder from "../../components/Buttons/FilterOrderBtn";
@@ -12,7 +11,6 @@ import Loading from "../../components/Loading/Loading";
 import { numTransportOrders } from "../../constants/config";
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { redStrong, redLife } from "../../constants/color";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = () => {
   const [loadingLocal, setloadingLocal] = useState(false);
@@ -28,27 +26,26 @@ const HomeScreen = () => {
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   // Nuevo filtro para ordenar por fecha más actual a más baja
   const [sortDesc, setSortDesc] = useState(true);
-  const [orderLines, setOrderLines] = useState([]);
   // Estado para controlar qué órdenes tienen OV expandidas
   const [expandedOrders, setExpandedOrders] = useState({});
+  // Estado para indicar cuando se están precargando las OVs
+  const [isPreloadingOVs, setIsPreloadingOVs] = useState(false);
 
   const {
     company,
     update,
     orderStates,
     transportOrders,
+    orderLines,
+    vendorRuc,
     loading,
     orderState,
     setloading,
     getTransportOrders,
+    getVendorInformation,
+    getOrderLinesByOrderId,
+    getOrderLinesForRecId,
   } = useContext(TransportOrderContext);
-
-  // Contexto para OrderLines (OV)
-  const {
-    orderLines: contextOrderLines,
-    loading: orderLinesLoading,
-    getOrderLine,
-  } = useContext(OrderLineContext);
 
   const fnSetdataList = useCallback((value) => {
     setdataList(value);
@@ -57,10 +54,32 @@ const HomeScreen = () => {
 
   const handleSearch = (text) => {
     setSearchText(text);
-    const filtered = dataList.filter((item) =>
-      item.orderId.toLowerCase().includes(text.toLowerCase()) ||
-      (item.codigoOT && item.codigoOT.toLowerCase().includes(text.toLowerCase()))
-    );
+    
+    if (!text.trim()) {
+      setFilteredData(dataList);
+      return;
+    }
+    
+    const searchTerm = text.toLowerCase();
+    
+    const filtered = dataList.filter((item) => {
+      // Buscar por Order ID (OT)
+      const matchesOrderId = item.orderId && item.orderId.toLowerCase().includes(searchTerm);
+      
+      // Buscar por código OT si existe
+      const matchesCodigoOT = item.codigoOT && item.codigoOT.toLowerCase().includes(searchTerm);
+      
+      // Buscar en las OVs de esta OT
+      const orderLinesForItem = getOrderLinesForRecId(item.recId) || [];
+      const matchesOrderLines = orderLinesForItem.some(orderLine => 
+        (orderLine.salesOrderId && orderLine.salesOrderId.toLowerCase().includes(searchTerm)) ||
+        (orderLine.itemName && orderLine.itemName.toLowerCase().includes(searchTerm)) ||
+        (orderLine.itemId && orderLine.itemId.toLowerCase().includes(searchTerm))
+      );
+      
+      return matchesOrderId || matchesCodigoOT || matchesOrderLines;
+    });
+    
     setFilteredData(filtered);
   };
 
@@ -107,6 +126,8 @@ const HomeScreen = () => {
     setStartDate(null);
     setEndDate(null);
     setFilteredData(dataList);
+    // También limpiamos el estado de expansión
+    setExpandedOrders({});
   };
 
   // Eliminar datos mock y usar datos del backend
@@ -118,6 +139,11 @@ const HomeScreen = () => {
       setloading(false);
     };
     fetchData();
+  }, []);
+
+  // Cargar información del vendedor al montar el componente
+  useEffect(() => {
+    getVendorInformation();
   }, []);
 
   // Actualizar dataList cuando cambian los datos del backend
@@ -140,19 +166,8 @@ const HomeScreen = () => {
     return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
   }
 
-  useEffect(() => {
-    // Cargar las últimas líneas de orden guardadas (si existen)
-    const loadOrderLines = async () => {
-      const lastOrderLines = await AsyncStorage.getItem('lastOrderLines');
-      if (lastOrderLines) {
-        setOrderLines(JSON.parse(lastOrderLines));
-      }
-    };
-    loadOrderLines();
-  }, []);
-
   // Función para expandir/colapsar OV de una OT
-  const toggleOrderLines = async (orderId) => {
+  const toggleOrderLines = async (orderId, recId) => {
     const isExpanded = expandedOrders[orderId];
     
     if (isExpanded) {
@@ -163,15 +178,18 @@ const HomeScreen = () => {
         return newExpanded;
       });
     } else {
-      // Expandir: cargar OV y agregar a expandedOrders
+      // Expandir: cargar OV para este orderId específico
       try {
-        await getOrderLine(company, orderId);
+        setIsPreloadingOVs(true); // Indica que se están precargando las OVs
+        await getOrderLinesByOrderId(company, orderId, recId);
         setExpandedOrders(prev => ({
           ...prev,
           [orderId]: true
         }));
       } catch (error) {
         alert("Error al cargar las líneas de orden: " + error);
+      } finally {
+        setIsPreloadingOVs(false); // Restablece el estado de precarga
       }
     }
   };
@@ -223,84 +241,107 @@ const HomeScreen = () => {
   );
 
   // Función para renderizar una OT con sus OV
-  const renderTransportOrderWithLines = ({ item: order }) => (
-    <View style={{
-      backgroundColor: "#fff",
-      borderRadius: 16,
-      borderWidth: 2,
-      borderColor: redStrong,
-      marginBottom: 10,
-      padding: 0,
-      shadowColor: redStrong,
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      elevation: 2,
-      overflow: "hidden"
-    }}>
-      {/* Componente OT original */}
-      <Order order={order} />
-      
-      {/* Botón para expandir/colapsar OV */}
-      <TouchableOpacity
-        onPress={() => toggleOrderLines(order.orderId)}
-        style={{
-          backgroundColor: expandedOrders[order.orderId] ? redLife : "#f0f0f0",
-          padding: 12,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderTopWidth: 1,
-          borderTopColor: "#e0e0e0",
-        }}
-      >
-        <Text style={{ 
-          color: expandedOrders[order.orderId] ? "#fff" : redStrong, 
-          fontWeight: "bold",
-          fontSize: 14
-        }}>
-          {expandedOrders[order.orderId] ? "Ocultar OV" : "Ver OV"}
-        </Text>
-        <Icon 
-          name={expandedOrders[order.orderId] ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-          size={24} 
-          color={expandedOrders[order.orderId] ? "#fff" : redStrong} 
-        />
-      </TouchableOpacity>
-      
-      {/* Lista de OV expandidas */}
-      {expandedOrders[order.orderId] && (
-        <View style={{ backgroundColor: "#f8f9fa", padding: 10 }}>
-          {orderLinesLoading ? (
-            <View style={{ padding: 20, alignItems: "center" }}>
-              <Loading loading={true} sizeIcon={20} />
-              <Text style={{ color: "#666", marginTop: 10 }}>Cargando OV...</Text>
-            </View>
-          ) : contextOrderLines && contextOrderLines.length > 0 ? (
-            <>
+  const renderTransportOrderWithLines = ({ item: order }) => {
+    // Obtener las OV específicas para este recId
+    const orderLinesForThisOT = getOrderLinesForRecId(order.recId) || [];
+    
+    return (
+      <View style={{
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: redStrong,
+        marginBottom: 10,
+        padding: 0,
+        shadowColor: redStrong,
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        elevation: 2,
+        overflow: "hidden"
+      }}>
+        {/* Componente OT original */}
+        <Order order={order} />
+        
+        {/* Botón para expandir/colapsar OV */}
+        <TouchableOpacity
+          onPress={() => toggleOrderLines(order.orderId, order.recId)}
+          style={{
+            backgroundColor: expandedOrders[order.orderId] ? redLife : "#f0f0f0",
+            padding: 12,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderTopWidth: 1,
+            borderTopColor: "#e0e0e0",
+          }}
+        >
+          <Text style={{ 
+            color: expandedOrders[order.orderId] ? "#fff" : redStrong, 
+            fontWeight: "bold",
+            fontSize: 14
+          }}>
+            {expandedOrders[order.orderId] ? "Ocultar OV" : "Ver OV"}
+          </Text>
+          <Icon 
+            name={expandedOrders[order.orderId] ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+            size={24} 
+            color={expandedOrders[order.orderId] ? "#fff" : redStrong} 
+          />
+        </TouchableOpacity>
+        
+        {/* Lista de OV expandidas */}
+        {expandedOrders[order.orderId] && (
+          <View style={{ backgroundColor: "#f8f9fa", padding: 10 }}>
+            {loading ? (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <Loading loading={true} sizeIcon={20} />
+                <Text style={{ color: "#666", marginTop: 10 }}>Cargando OV...</Text>
+              </View>
+            ) : orderLinesForThisOT && orderLinesForThisOT.length > 0 ? (
+              <>
+                <Text style={{ 
+                  fontWeight: "bold", 
+                  color: redStrong, 
+                  marginBottom: 10,
+                  fontSize: 16
+                }}>
+                </Text>
+                {orderLinesForThisOT.map((orderLine, index) => renderOrderLine(orderLine, index))}
+              </>
+            ) : (
               <Text style={{ 
-                fontWeight: "bold", 
-                color: redStrong, 
-                marginBottom: 10,
-                fontSize: 16
+                color: "#666", 
+                textAlign: "center", 
+                padding: 20,
+                fontStyle: "italic"
               }}>
-                Órdenes de Venta ({contextOrderLines.length})
+                No hay órdenes de venta para esta OT
               </Text>
-              {contextOrderLines.map((orderLine, index) => renderOrderLine(orderLine, index))}
-            </>
-          ) : (
-            <Text style={{ 
-              color: "#666", 
-              textAlign: "center", 
-              padding: 20,
-              fontStyle: "italic"
-            }}>
-              No hay órdenes de venta para esta OT
-            </Text>
-          )}
-        </View>
-      )}
-    </View>
-  );
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Función para precargar todas las OVs para búsqueda
+  const preloadAllOrderLines = async () => {
+    if (transportOrders && transportOrders.length > 0) {
+      setIsPreloadingOVs(true);
+      const promises = transportOrders.map(order => 
+        getOrderLinesByOrderId(company, order.orderId, order.recId).catch(() => null)
+      );
+      await Promise.all(promises);
+      setIsPreloadingOVs(false);
+    }
+  };
+
+  // Precargar OVs cuando cambian las transport orders
+  useEffect(() => {
+    if (transportOrders && transportOrders.length > 0 && company) {
+      preloadAllOrderLines();
+    }
+  }, [transportOrders, company]);
 
   return (
     <>
@@ -319,17 +360,19 @@ const HomeScreen = () => {
                 <Icon name="search" size={24} color={redStrong} style={{ marginRight: 8 }} />
                 <TextInput
                   style={{ flex: 1, fontSize: 16, color: redStrong, backgroundColor: "#fff", paddingVertical: 8, borderRadius: 10 }}
-                  placeholder="Buscar por Order ID..."
-                  placeholderTextColor={redLife}
+                  placeholder={isPreloadingOVs ? "Cargando datos para búsqueda..." : "Buscar por OT o OV..."}
+                  placeholderTextColor={isPreloadingOVs ? "#999" : redLife}
                   value={searchText}
+                  editable={!isPreloadingOVs}
                   onChangeText={(text) => {
-                    setSearchText(text);
-                    const filtered = dataList.filter((item) =>
-                      item.orderId && item.orderId.toLowerCase().includes(text.toLowerCase())
-                    );
-                    setFilteredData(filtered);
+                    handleSearch(text);
                   }}
                 />
+                {isPreloadingOVs && (
+                  <View style={{ marginLeft: 8 }}>
+                    <Loading loading={true} sizeIcon={16} />
+                  </View>
+                )}
                 <TouchableOpacity onPress={handleSortByDate} style={{ marginLeft: 8, padding: 4 }}>
                   <Icon name={sortDesc ? "arrow-downward" : "arrow-upward"} size={24} color={redStrong} />
                 </TouchableOpacity>

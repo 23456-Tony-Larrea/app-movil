@@ -23,44 +23,57 @@ import MainStack from "../routes/MainStack";
 import Loading from "../components/Loading/Loading";
 import { redLife } from "../constants/color";
 import { subTitleSize } from "../constants/text";
+import { useAuth } from "../context/Auth/AuthContext";
 
 const b2cClient = new B2CClient(b2cConfig);
 
 export default function Login() {
-  const [loadingLocal, setloadingLocal] = React.useState<boolean>(false);
-  const [authResult, setAuthResult] = React.useState<MSALResult | null>(null);
+  const { 
+    authResult, 
+    isLoading, 
+    isInitialized,
+    setAuthResult, 
+    clearAuth, 
+    setLoading, 
+    initializeAuth 
+  } = useAuth();
+  
   const [iosEphemeralSession, setIosEphemeralSession] = React.useState(false);
+  
   const webviewParameters: MSALWebviewParams = {
     ios_prefersEphemeralWebBrowserSession: iosEphemeralSession,
   };
 
   React.useEffect(() => {
-    async function init() {
-      try {
-        await b2cClient.init();
-        await b2cClient.signOut(); // Cierra sesión cada vez que se refresca la app
-        setAuthResult(null);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-    init();
+    // Inicializar la autenticación usando el contexto
+    initializeAuth(b2cClient);
   }, []);
 
   const handleSignInPress = async () => {
-    setloadingLocal(true);
+    setLoading(true);
     try {
       const res = await b2cClient.signIn({ scopes, webviewParameters });
-      setAuthResult(res);
+      
       if (res && res.accessToken) {
-        console.log('MSAL Access Token:', res.accessToken);
-        // Guardar el token en AsyncStorage
+        // Guardar el token de acceso
         await AsyncStorage.setItem("@msalToken", res.accessToken);
+        
+        // Extraer solo el OID del usuario
+        if (res.account && res.account.claims) {
+          const claims = res.account.claims as any;
+          if (claims.oid) {
+            const userOid = claims.oid;
+            await AsyncStorage.setItem("@userOid", userOid);
+          }
+        }
+        
+        // Actualizar el estado de autenticación
+        setAuthResult(res);
       }
     } catch (error) {
-      console.warn(error);
+      console.warn('Error durante el login:', error);
     } finally {
-      setloadingLocal(false);
+      setLoading(false);
     }
   };
 
@@ -72,23 +85,23 @@ export default function Login() {
       });
       setAuthResult(res);
     } catch (error) {
-      console.warn(error);
+      console.warn('Error al adquirir token:', error);
     }
   };
 
   const handleSignoutPress = async () => {
     try {
       await b2cClient.signOut();
-      setAuthResult(null);
+      await clearAuth(); // Usar la función del contexto
     } catch (error) {
-      console.warn(error);
+      console.warn('Error durante el logout:', error);
     }
   };
 
   return (
     <>
-      {loadingLocal && (
-        <Loading loading={loadingLocal} opacity={0.15} sizeIcon={40} />
+      {isLoading && (
+        <Loading loading={isLoading} opacity={0.15} sizeIcon={40} />
       )}
       {/* {!true ? ( */}
       {authResult ? (

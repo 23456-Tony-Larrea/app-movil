@@ -5,17 +5,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MainStack from "./src/routes/MainStack";
 import TransportOrderState from "./src/context/TransportOrder/TransportOrderState";
 import OrderLineState from "./src/context/TransportOrderLines/OrderLineState";
+import { AuthProvider } from "./src/context/Auth/AuthContext";
 import Login from "./src/login/login";
 
 export default function App() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <TransportOrderState>
-        <OrderLineState>
-          {/* <MainStack /> */}
-          <Login />
-        </OrderLineState>
-      </TransportOrderState>
+      <AuthProvider>
+        <TransportOrderState>
+          <OrderLineState>
+            {/* <MainStack /> */}
+            <Login />
+          </OrderLineState>
+        </TransportOrderState>
+      </AuthProvider>
     </SafeAreaView>
   );
 }

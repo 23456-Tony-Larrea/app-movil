@@ -39,6 +39,26 @@ export const TransportOrderReducer = (state, action) => {
         ...state,
         orderState: action.payload,
       };
+    case TRANSPORTORDER.VENDORRUC:
+      return {
+        ...state,
+        vendorRuc: action.payload,
+      };
+    case TRANSPORTORDER.ORDERLINES:
+      if (action.payload.recId === 'CLEAR_ALL') {
+        return {
+          ...state,
+          orderLines: {},
+        };
+      }
+      
+      return {
+        ...state,
+        orderLines: {
+          ...state.orderLines,
+          [action.payload.recId]: action.payload.orderLines,
+        },
+      };
 
     default:
       return state;
