@@ -61,20 +61,17 @@ export const AuthProvider = ({ children }) => {
 
   // Función para manejar cambios en el estado de la aplicación
   const handleAppStateChange = async (nextAppState) => {
-    // Si la app va de activa a background o inactive, hacer logout automático
-    if (
-      appState.current.match(/active/) && 
-      nextAppState.match(/background|inactive/)
-    ) {
-      await performAutoLogout();
-    }
-    
-    // Si la app vuelve a estar activa desde el background, verificar la sesión
+    // Cuando la app vuelve a estar activa, verificar si han pasado 3 días
     if (
       appState.current.match(/background|inactive/) && 
       nextAppState === 'active'
     ) {
       await checkSessionValidity();
+    }
+    
+    // Actualizar la última actividad cuando la app está activa
+    if (nextAppState === 'active') {
+      await updateLastActivity();
     }
     
     appState.current = nextAppState;
@@ -85,6 +82,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Limpiar todos los datos de sesión
       await AsyncStorage.removeItem("@msalToken");
+      await AsyncStorage.removeItem("@lastActivity");
       await clearUserOid();
       
       // Actualizar el estado
@@ -95,16 +93,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Función para actualizar la última actividad
+  const updateLastActivity = async () => {
+    try {
+      const currentTime = new Date().getTime().toString();
+      await AsyncStorage.setItem("@lastActivity", currentTime);
+    } catch (error) {
+      console.error('Error al actualizar última actividad:', error);
+    }
+  };
+
   // Función para verificar la validez de la sesión
   const checkSessionValidity = async () => {
     try {
       const savedToken = await AsyncStorage.getItem("@msalToken");
       const savedOid = await AsyncStorage.getItem("@userOid");
+      const lastActivity = await AsyncStorage.getItem("@lastActivity");
       
       if (!savedToken || !savedOid) {
         // Si los datos fueron limpiados, cerrar sesión
         dispatch({ type: AUTH_TYPES.CLEAR_AUTH });
+        return;
       }
+
+      // Verificar si han pasado 3 días desde la última actividad
+      if (lastActivity) {
+        const lastActivityTime = parseInt(lastActivity);
+        const currentTime = new Date().getTime();
+        const threeDaysInMs = 3 * 24 * 60 * 60 * 1000; // 3 días en milisegundos
+        
+        if (currentTime - lastActivityTime > threeDaysInMs) {
+          // Han pasado más de 3 días, cerrar sesión
+          await performAutoLogout();
+          return;
+        }
+      }
+      
     } catch (error) {
       console.error('Error al verificar la validez de la sesión:', error);
       dispatch({ type: AUTH_TYPES.CLEAR_AUTH });
@@ -112,14 +136,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Función para establecer resultado de autenticación
-  const setAuthResult = (authResult) => {
+  const setAuthResult = async (authResult) => {
     dispatch({ type: AUTH_TYPES.SET_AUTH_RESULT, payload: authResult });
+    // Registrar la actividad cuando el usuario se autentica
+    await updateLastActivity();
   };
 
   // Función para limpiar autenticación
   const clearAuth = async () => {
     try {
       await AsyncStorage.removeItem("@msalToken");
+      await AsyncStorage.removeItem("@lastActivity");
       await clearUserOid();
       dispatch({ type: AUTH_TYPES.CLEAR_AUTH });
     } catch (error) {
@@ -147,6 +174,8 @@ export const AuthProvider = ({ children }) => {
       if (isLoggedIn && savedToken && savedOid) {
         // Si hay sesión activa y todos los datos están guardados, mantener la sesión
         setAuthResult({ accessToken: savedToken });
+        // Actualizar la última actividad al inicializar
+        await updateLastActivity();
       } else {
         // Si falta algún dato o no hay sesión activa, limpiar todo
         await b2cClient.signOut();
@@ -170,6 +199,7 @@ export const AuthProvider = ({ children }) => {
     initializeAuth,
     performAutoLogout,
     checkSessionValidity,
+    updateLastActivity,
   };
 
   return (
