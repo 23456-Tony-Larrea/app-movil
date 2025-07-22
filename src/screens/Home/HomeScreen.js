@@ -28,8 +28,9 @@ const HomeScreen = () => {
   const [sortDesc, setSortDesc] = useState(true);
   // Estado para controlar qué órdenes tienen OV expandidas
   const [expandedOrders, setExpandedOrders] = useState({});
-  // Estado para indicar cuando se están precargando las OVs
-  const [isPreloadingOVs, setIsPreloadingOVs] = useState(false);
+  // Estado para búsqueda avanzada
+  const [advancedSearchLoaded, setAdvancedSearchLoaded] = useState(false);
+  const [loadingAdvancedSearch, setLoadingAdvancedSearch] = useState(false);
 
   const {
     company,
@@ -52,12 +53,17 @@ const HomeScreen = () => {
     setFilteredData(value);
   }, []);
 
-  const handleSearch = (text) => {
+  const handleSearch = async (text) => {
     setSearchText(text);
     
     if (!text.trim()) {
       setFilteredData(dataList);
       return;
+    }
+    
+    // Si el usuario está buscando y no hemos cargado las OV, cargarlas automáticamente
+    if (!advancedSearchLoaded && text.trim().length >= 2) {
+      loadAdvancedSearch();
     }
     
     const searchTerm = text.toLowerCase();
@@ -69,7 +75,7 @@ const HomeScreen = () => {
       // Buscar por código OT si existe
       const matchesCodigoOT = item.codigoOT && item.codigoOT.toLowerCase().includes(searchTerm);
       
-      // Buscar en las OVs de esta OT
+      // Buscar en OV si están cargadas
       const orderLinesForItem = getOrderLinesForRecId(item.recId) || [];
       const matchesOrderLines = orderLinesForItem.some(orderLine => 
         (orderLine.salesOrderId && orderLine.salesOrderId.toLowerCase().includes(searchTerm)) ||
@@ -156,15 +162,25 @@ const HomeScreen = () => {
     setFilteredData(dataList);
   }, [dataList]);
 
-  // Utilidad para formatear Date a 'YYYY-MM-DD'
-  function formatDateToString(date) {
-    if (!date) return '';
-    const d = new Date(date);
-    const month = '' + (d.getMonth() + 1);
-    const day = '' + d.getDate();
-    const year = d.getFullYear();
-    return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
-  }
+  // Función para cargar todas las OV para búsqueda avanzada
+  const loadAdvancedSearch = async () => {
+    if (advancedSearchLoaded || !transportOrders || transportOrders.length === 0) {
+      return;
+    }
+
+    setLoadingAdvancedSearch(true);
+    try {
+      const promises = transportOrders.map(order => 
+        getOrderLinesByOrderId(company, order.orderId, order.recId).catch(() => null)
+      );
+      await Promise.all(promises);
+      setAdvancedSearchLoaded(true);
+    } catch (error) {
+      console.error("Error cargando búsqueda avanzada:", error);
+    } finally {
+      setLoadingAdvancedSearch(false);
+    }
+  };
 
   // Función para expandir/colapsar OV de una OT
   const toggleOrderLines = async (orderId, recId) => {
@@ -180,7 +196,6 @@ const HomeScreen = () => {
     } else {
       // Expandir: cargar OV para este orderId específico
       try {
-        setIsPreloadingOVs(true); // Indica que se están precargando las OVs
         await getOrderLinesByOrderId(company, orderId, recId);
         setExpandedOrders(prev => ({
           ...prev,
@@ -188,8 +203,6 @@ const HomeScreen = () => {
         }));
       } catch (error) {
         alert("Error al cargar las líneas de orden: " + error);
-      } finally {
-        setIsPreloadingOVs(false); // Restablece el estado de precarga
       }
     }
   };
@@ -292,12 +305,7 @@ const HomeScreen = () => {
         {/* Lista de OV expandidas */}
         {expandedOrders[order.orderId] && (
           <View style={{ backgroundColor: "#f8f9fa", padding: 10 }}>
-            {loading ? (
-              <View style={{ padding: 20, alignItems: "center" }}>
-                <Loading loading={true} sizeIcon={20} />
-                <Text style={{ color: "#666", marginTop: 10 }}>Cargando OV...</Text>
-              </View>
-            ) : orderLinesForThisOT && orderLinesForThisOT.length > 0 ? (
+            {orderLinesForThisOT && orderLinesForThisOT.length > 0 ? (
               <>
                 <Text style={{ 
                   fontWeight: "bold", 
@@ -324,25 +332,6 @@ const HomeScreen = () => {
     );
   };
 
-  // Función para precargar todas las OVs para búsqueda
-  const preloadAllOrderLines = async () => {
-    if (transportOrders && transportOrders.length > 0) {
-      setIsPreloadingOVs(true);
-      const promises = transportOrders.map(order => 
-        getOrderLinesByOrderId(company, order.orderId, order.recId).catch(() => null)
-      );
-      await Promise.all(promises);
-      setIsPreloadingOVs(false);
-    }
-  };
-
-  // Precargar OVs cuando cambian las transport orders
-  useEffect(() => {
-    if (transportOrders && transportOrders.length > 0 && company) {
-      preloadAllOrderLines();
-    }
-  }, [transportOrders, company]);
-
   return (
     <>
       <SafeAreaView style={[styles.container, { backgroundColor: "#fff", flex: 1 }]}> 
@@ -360,22 +349,24 @@ const HomeScreen = () => {
                 <Icon name="search" size={24} color={redStrong} style={{ marginRight: 8 }} />
                 <TextInput
                   style={{ flex: 1, fontSize: 16, color: redStrong, backgroundColor: "#fff", paddingVertical: 8, borderRadius: 10 }}
-                  placeholder={isPreloadingOVs ? "Cargando datos para búsqueda..." : "Buscar por OT o OV..."}
-                  placeholderTextColor={isPreloadingOVs ? "#999" : redLife}
+                  placeholder={loadingAdvancedSearch ? "Cargando búsqueda completa..." : "Buscar OT y OV..."}
+                  placeholderTextColor={loadingAdvancedSearch ? "#999" : redLife}
                   value={searchText}
-                  editable={!isPreloadingOVs}
+                  editable={!loadingAdvancedSearch}
                   onChangeText={(text) => {
                     handleSearch(text);
                   }}
                 />
-                {isPreloadingOVs && (
+                <TouchableOpacity onPress={handleSortByDate} style={{ marginLeft: 8, padding: 4 }}>
+                  <Icon name={sortDesc ? "arrow-downward" : "arrow-upward"} size={24} color={redStrong} />
+                </TouchableOpacity>
+                
+                {/* Indicador de carga de búsqueda avanzada */}
+                {loadingAdvancedSearch && (
                   <View style={{ marginLeft: 8 }}>
                     <Loading loading={true} sizeIcon={16} />
                   </View>
                 )}
-                <TouchableOpacity onPress={handleSortByDate} style={{ marginLeft: 8, padding: 4 }}>
-                  <Icon name={sortDesc ? "arrow-downward" : "arrow-upward"} size={24} color={redStrong} />
-                </TouchableOpacity>
               
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
@@ -415,6 +406,37 @@ const HomeScreen = () => {
                   Colapsar todas las OV
                 </Text>
               </TouchableOpacity>
+              
+              {/* Información sobre búsqueda */}
+              {!advancedSearchLoaded && !loadingAdvancedSearch && (
+                <View style={{ 
+                  backgroundColor: "#e3f2fd", 
+                  padding: 12, 
+                  borderRadius: 8, 
+                  marginBottom: 10,
+                  borderLeftWidth: 4,
+                  borderLeftColor: "#2196f3"
+                }}>
+                  <Text style={{ color: "#1565c0", fontSize: 13, textAlign: "center" }}>
+                    💡 Escribe 2+ caracteres para buscar en todas las OV automáticamente
+                  </Text>
+                </View>
+              )}
+              
+              {advancedSearchLoaded && (
+                <View style={{ 
+                  backgroundColor: "#d4edda", 
+                  padding: 12, 
+                  borderRadius: 8, 
+                  marginBottom: 10,
+                  borderLeftWidth: 4,
+                  borderLeftColor: "#28a745"
+                }}>
+                  <Text style={{ color: "#155724", fontSize: 13, textAlign: "center" }}>
+                    ✅ Búsqueda completa activada - Buscando en OT y OV
+                  </Text>
+                </View>
+              )}
               {/* DateTimePickers */}
               {showStartDatePicker && (
                 <DateTimePicker
@@ -453,9 +475,17 @@ const HomeScreen = () => {
               </Text>
             </View>
           }
-          onEndReachedThreshold={0}
+          onEndReachedThreshold={0.1}
           ItemSeparatorComponent={<View style={{ height: 12 }} />}
-          maxToRenderPerBatch={2}
+          maxToRenderPerBatch={5}
+          windowSize={10}
+          initialNumToRender={5}
+          removeClippedSubviews={true}
+          getItemLayout={(data, index) => ({
+            length: 200, // altura estimada de cada item
+            offset: 212 * index, // altura + separator
+            index,
+          })}
           style={{ marginTop: 16 }}
           contentContainerStyle={{ paddingBottom: 32 }}
         />
