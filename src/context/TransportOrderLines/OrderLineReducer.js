@@ -10,12 +10,19 @@ export const OrderLineReducer = (state, action) => {
         update: action.payload.update,
       };
     case ORDERLINE.DOCUMENTATION:
-      return {
+      console.log("=== REDUCER ORDERLINE.DOCUMENTATION ===");
+      console.log("Action payload:", action.payload);
+      console.log("Action payload data:", action.payload.data);
+      console.log("Data length:", action.payload.data ? action.payload.data.length : 0);
+      const newState = {
         ...state,
         documents: action.payload.data,
         loading: action.payload.loading,
         update: action.payload.update,
       };
+      console.log("New state documents:", newState.documents);
+      console.log("New state documents length:", newState.documents ? newState.documents.length : 0);
+      return newState;
     case ORDERLINE.SETORDERLINE:
       return {
         ...state,

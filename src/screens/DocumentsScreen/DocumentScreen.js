@@ -6,7 +6,14 @@ import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineCon
 import Loading from "../../components/Loading/Loading";
 
 const DocumentsScreen = ({ route }) => {
+  console.log("=== RENDER DocumentsScreen ===");
+  console.log("Route params:", route.params);
+  
   const { document } = route.params;
+  console.log("Document from params:", document);
+  console.log("Document type:", typeof document);
+  console.log("Document keys:", document ? Object.keys(document) : "NULL");
+  
   const [base64, setbase64] = useState("");
   const [wait, setwait] = useState(false);
   const navigation = useNavigation();
@@ -25,9 +32,16 @@ const DocumentsScreen = ({ route }) => {
     return () => backHandler.remove();
   }, []);
   useEffect(() => {
+    console.log("=== useEffect DocumentsScreen - Fetching base64 ===");
+    console.log("Document to fetch:", document);
     const fetchData2 = async () => {
+      console.log("Setting wait to true...");
       setwait(true);
-      setbase64(await getBase64Doc(document));
+      console.log("Calling getBase64Doc...");
+      const base64Result = await getBase64Doc(document);
+      console.log("getBase64Doc result:", base64Result ? `${base64Result.length} characters` : "EMPTY");
+      setbase64(base64Result);
+      console.log("Setting wait to false...");
       setwait(false);
     };
     fetchData2();

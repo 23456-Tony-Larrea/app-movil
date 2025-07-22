@@ -9,7 +9,22 @@ const Documents = ({ company, recId, recIdOV }) => {
   const { update, documents, setloading, getDocumentation } =
     useContext(OrderLineContext);
 
+  // ✅ AGREGAR LOGS PARA DEBUG
+  console.log("=== RENDER Documents Component ===");
+  console.log("Props recibidas:");
+  console.log("- company:", company);
+  console.log("- recId:", recId);
+  console.log("- recIdOV:", recIdOV);
+  console.log("Context state:");
+  console.log("- documents:", documents);
+  console.log("- documents type:", typeof documents);
+  console.log("- documents length:", documents ? documents.length : 0);
+  console.log("- update:", update);
+  console.log("================================");
+
   useEffect(() => {
+    console.log("=== useEffect 1 - Initial fetch ===");
+    console.log("Parámetros:", { company, recId, recIdOV });
     const fetchData2 = async () => {
       await getDocumentation(company, recId, recIdOV);
     };
@@ -17,8 +32,11 @@ const Documents = ({ company, recId, recIdOV }) => {
   }, [company, recId, recIdOV]);
 
   useEffect(() => {
+    console.log("=== useEffect 2 - Update fetch ===");
+    console.log("Update:", update);
     const fetchData2 = async () => {
       if (update) {
+        console.log("Update is true, calling getDocumentation...");
         setloading(true);
         await getDocumentation(company, recId, recIdOV);
       }
