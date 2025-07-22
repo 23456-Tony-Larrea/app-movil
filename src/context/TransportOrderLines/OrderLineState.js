@@ -351,19 +351,16 @@ const OrderLineState = (props) => {
       alert("Error al enviar la notificación de pánico. " + error);
     }
   };
-  const deleteSPDocumentation = async (url) => {
+  const deleteSPDocumentation = async (recIdDocument, company = "li") => {
     try {
       let resp = false;
-      let localUrl = baseUrl + "api/Document/delete";
+      let localUrl = baseUrl + "api/Document/delete?recIdDocument=" + recIdDocument + "&company=" + company;
       
-      const headers = await createAuthHeaders({
-        "Content-Type": "application/json",
-      });
+      const headers = await createAuthHeaders();
       
       let response = await fetch(localUrl, {
-        method: "POST",
+        method: "GET",
         headers: headers,
-        body: JSON.stringify(url),
       });
       
       if (response.status === 200) {
@@ -372,7 +369,7 @@ const OrderLineState = (props) => {
       return resp;
     } catch (error) {
       alert("Ups! encontramos un error al cargar los datos: " + error);
-      return "";
+      return false;
     }
   };
   const setOrderLine = useCallback((value) => {

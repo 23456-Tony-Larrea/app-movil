@@ -13,12 +13,11 @@ import { extFile, tableIdDocuments } from "../../constants/config";
 const ModalChooseFile = ({ open, setOpen, document }) => {
   const { orderLines, setUpdate, postNewSPDocumentation, postAXDocumentation } =
     useContext(OrderLineContext);
-  const { company, vendorRuc } = useContext(TransportOrderContext); // ✅ AGREGADO: vendorRuc
+  const { company, vendorRuc } = useContext(TransportOrderContext);
   const [loading, setloading] = useState(false);
 
   const fnUploadFile = async (uri, base64Data = null) => {
     try {
-      // Verificar que tenemos los datos necesarios
       if (!document) {
         alert("Error: No se encontró información del documento");
         return false;
@@ -41,36 +40,31 @@ const ModalChooseFile = ({ open, setOpen, document }) => {
 
       const normalizedFileName = document.documentName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-      // Si no tenemos base64, necesitamos convertir la imagen
       let finalBase64 = base64Data;
       if (!finalBase64) {
         alert("Error: Se necesita la imagen en formato base64");
         return false;
       }
 
-      // Preparar datos JSON según el formato esperado por la API
-      // La API espera directamente un ARRAY de objetos Attachment (según curl del Swagger)
       const attachmentObject = {
         base64: finalBase64,
         nombreArchivo: normalizedFileName,
         nombreCarpeta: "Desarrollo2",
         nombreCarpeta2: orderLines[0].liPackingSlipId,
         vendAccount: vendorRuc || "",
-        url: "", // String vacío
-        recIdRecord: parseInt(document.recId), // Número entero
-        tableId: parseInt(tableIdDocuments), // Número entero
+        url: "", 
+        recIdRecord: parseInt(document.recId), 
+        tableId: parseInt(tableIdDocuments), 
         extArchivo: extFile
       };
 
-      // ✅ CORRECTO: Enviar directamente el array como muestra el curl
       const dataJSON = [attachmentObject];
       
       const url = await postNewSPDocumentation(dataJSON);
 
       if (url !== null && url !== undefined && url !== "") {
-        // ✅ CORRECTO: postAX también espera un array según el curl
         const dataAX = [{
-          base64: "", // No necesario para AX
+          base64: "", 
           nombreArchivo: normalizedFileName,
           nombreCarpeta: "Desarrollo2",
           nombreCarpeta2: orderLines[0].liPackingSlipId,
@@ -113,7 +107,7 @@ const ModalChooseFile = ({ open, setOpen, document }) => {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.9,
-        base64: true, // ✅ AGREGADO: Solicitar base64 también para la cámara
+        base64: true, 
       });
 
       if (!result.canceled) {
@@ -151,7 +145,7 @@ const ModalChooseFile = ({ open, setOpen, document }) => {
         base64: true,
       });
       
-      if (!result.canceled) {  // ✅ CORREGIDO: Cambio de "cancelled" a "canceled"
+      if (!result.canceled) {  
         const resp = await fnUploadFile(result.assets[0].uri, result.assets[0].base64);
         
         if (!resp) {
