@@ -10,11 +10,7 @@ import { TransportOrderContext } from "../../context/TransportOrder/TransportOrd
 import Loading from "../Loading/Loading";
 
 const DocumentDetail = ({ item }) => {
-  // ✅ AGREGAR LOGS PARA DEBUG
-  console.log("=== RENDER DocumentDetail ===");
-  console.log("Item recibido:", item);
-  console.log("Item type:", typeof item);
-  console.log("Item keys:", item ? Object.keys(item) : "NULL");
+ 
   
   const navigation = useNavigation();
   const { deleteSPDocumentation, postAXUpdateDocumentation, setUpdate } =
