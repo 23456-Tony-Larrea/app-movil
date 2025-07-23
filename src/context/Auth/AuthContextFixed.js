@@ -78,8 +78,8 @@ export const AuthProvider = ({ children }) => {
     appState.current = nextAppState;
   };
 
-  // Función para realizar logout automático por inactividad
-  const logoutByInactivity = async () => {
+  // Función para realizar logout automático
+  const performAutoLogout = async () => {
     try {
       // Limpiar todos los datos de sesión
       await AsyncStorage.removeItem("@msalToken");
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }) => {
         
         // Si han pasado más de 3 días, realizar logout automático
         if (diffInDays > 3) {
-          await logoutByInactivity();
+          await performAutoLogout();
         }
       }
     } catch (error) {
@@ -141,8 +141,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para cerrar sesión completa
-  const signOutUser = async () => {
+  // Función para logout completo con MSAL
+  const performLogout = async () => {
     try {
       // Intentar hacer signOut de MSAL si el cliente está disponible
       if (b2cClientRef.current) {
@@ -202,10 +202,10 @@ export const AuthProvider = ({ children }) => {
     clearAuth,
     setLoading,
     initializeAuth,
-    logoutByInactivity,
+    performAutoLogout,
     checkSessionValidity,
     updateLastActivity,
-    signOutUser, // Función de logout manual
+    performLogout, // Nueva función de logout completo
   };
 
   return (

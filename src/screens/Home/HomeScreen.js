@@ -349,10 +349,9 @@ const HomeScreen = () => {
                 <Icon name="search" size={24} color={redStrong} style={{ marginRight: 8 }} />
                 <TextInput
                   style={{ flex: 1, fontSize: 16, color: redStrong, backgroundColor: "#fff", paddingVertical: 8, borderRadius: 10 }}
-                  placeholder={loadingAdvancedSearch ? "Cargando búsqueda completa..." : "Buscar OT y OV..."}
-                  placeholderTextColor={loadingAdvancedSearch ? "#999" : redLife}
+                  placeholder="Buscar OT y OV..."
+                  placeholderTextColor={redLife}
                   value={searchText}
-                  editable={!loadingAdvancedSearch}
                   onChangeText={(text) => {
                     handleSearch(text);
                   }}
@@ -360,14 +359,6 @@ const HomeScreen = () => {
                 <TouchableOpacity onPress={handleSortByDate} style={{ marginLeft: 8, padding: 4 }}>
                   <Icon name={sortDesc ? "arrow-downward" : "arrow-upward"} size={24} color={redStrong} />
                 </TouchableOpacity>
-                
-                {/* Indicador de carga de búsqueda avanzada */}
-                {loadingAdvancedSearch && (
-                  <View style={{ marginLeft: 8 }}>
-                    <Loading loading={true} sizeIcon={16} />
-                  </View>
-                )}
-              
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
                 <Text
@@ -407,36 +398,6 @@ const HomeScreen = () => {
                 </Text>
               </TouchableOpacity>
               
-              {/* Información sobre búsqueda */}
-              {!advancedSearchLoaded && !loadingAdvancedSearch && (
-                <View style={{ 
-                  backgroundColor: "#e3f2fd", 
-                  padding: 12, 
-                  borderRadius: 8, 
-                  marginBottom: 10,
-                  borderLeftWidth: 4,
-                  borderLeftColor: "#2196f3"
-                }}>
-                  <Text style={{ color: "#1565c0", fontSize: 13, textAlign: "center" }}>
-                    💡 Escribe 2+ caracteres para buscar en todas las OV automáticamente
-                  </Text>
-                </View>
-              )}
-              
-              {advancedSearchLoaded && (
-                <View style={{ 
-                  backgroundColor: "#d4edda", 
-                  padding: 12, 
-                  borderRadius: 8, 
-                  marginBottom: 10,
-                  borderLeftWidth: 4,
-                  borderLeftColor: "#28a745"
-                }}>
-                  <Text style={{ color: "#155724", fontSize: 13, textAlign: "center" }}>
-                    ✅ Búsqueda completa activada - Buscando en OT y OV
-                  </Text>
-                </View>
-              )}
               {/* DateTimePickers */}
               {showStartDatePicker && (
                 <DateTimePicker
