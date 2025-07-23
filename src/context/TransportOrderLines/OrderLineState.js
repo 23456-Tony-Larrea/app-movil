@@ -4,6 +4,7 @@ import { OrderLineReducer } from "./OrderLineReducer";
 import { OrderLineContext } from "./OrderLineContext";
 import { baseUrl, emailPanicNotification } from "../../constants/config";
 import { ORDERLINE } from "../Types/types";
+// MSAL imports
 
 const OrderLineState = (props) => {
   const initialState = {
@@ -19,9 +20,15 @@ const OrderLineState = (props) => {
 
   const [state, dispatch] = useReducer(OrderLineReducer, initialState);
 
+  // Función auxiliar para obtener el token MSAL
   const getMSALToken = async () => {
     try {
+      console.log("=== getMSALToken ===");
       const token = await AsyncStorage.getItem("@msalToken");
+      console.log("Token desde AsyncStorage:", token ? "ENCONTRADO" : "NO ENCONTRADO");
+      if (token) {
+        console.log("Token preview:", `${token.substring(0, 50)}...`);
+      }
       return token;
     } catch (error) {
       console.error("Error obteniendo token MSAL:", error);
@@ -29,8 +36,12 @@ const OrderLineState = (props) => {
     }
   };
 
+  // Función auxiliar para crear headers con Bearer token
   const createAuthHeaders = async (additionalHeaders = {}) => {
     const token = await getMSALToken();
+    console.log("=== createAuthHeaders ===");
+    console.log("Token obtenido:", token ? `${token.substring(0, 50)}...` : "NULL");
+    console.log("Additional headers:", additionalHeaders);
     
     const headers = {
       ...additionalHeaders,
@@ -42,6 +53,7 @@ const OrderLineState = (props) => {
       console.warn("WARNING: No se encontró token MSAL");
     }
     
+    console.log("Headers finales:", Object.keys(headers));
     return headers;
   };
 
@@ -74,6 +86,12 @@ const OrderLineState = (props) => {
   };
   const getDocumentation = async (company, recId, recIdOV) => {
     try {
+      console.log("=== INICIO getDocumentation ===");
+      console.log("Parámetros recibidos:");
+      console.log("- company:", company);
+      console.log("- recId:", recId);
+      console.log("- recIdOV:", recIdOV);
+      
       let localUrl =
         baseUrl +
         "api/Document/get?company=" +
@@ -83,81 +101,128 @@ const OrderLineState = (props) => {
         "&recIdOV=" +
         recIdOV;
       
-      const headers = await createAuthHeaders();
+      console.log("URL completa:", localUrl);
+      console.log("baseUrl:", baseUrl);
       
+      const headers = await createAuthHeaders();
+      console.log("Headers preparados para GET:", Object.keys(headers));
+      
+      console.log("Enviando request GET a Document/get...");
       const response1 = await fetch(localUrl, {
         method: "GET",
         headers: headers,
       });
       
+      console.log("Response status:", response1.status);
+      console.log("Response headers:", response1.headers);
+      
       if (response1.status === 200) {
         const data = await response1.json();
+        console.log("Datos recibidos de Document/get:");
+        console.log("- Tipo de datos:", typeof data);
+        console.log("- Es array:", Array.isArray(data));
+        console.log("- Longitud:", data?.length || 0);
+        console.log("- Datos completos:", data);
         
         if (data && Array.isArray(data)) {
+          console.log("Ordenando datos por mandatory...");
           data.sort((a, b) => {
             return b.mandatory - a.mandatory;
           });
+          console.log("Datos después del sort:", data);
         }
 
+        console.log("Enviando datos al dispatch...");
         dispatch({
           type: ORDERLINE.DOCUMENTATION,
           payload: { data: data, loading: false, update: false },
         });
+        
+        console.log("Dispatch completado para ORDERLINE.DOCUMENTATION");
+        console.log("=== FIN getDocumentation - ÉXITO ===");
+      } else {
+        console.error("Error en Document/get, status:", response1.status);
+        const errorText = await response1.text();
+        console.error("Error response text:", errorText);
+        console.log("=== FIN getDocumentation - ERROR ===");
       }
     } catch (error) {
+      console.error("=== ERROR en getDocumentation ===");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("Error completo:", error);
       alert("Ups! encontramos un error al cargar los datos: " + error);
+      console.log("=== FIN getDocumentation - EXCEPCIÓN ===");
     }
   };
   const getBase64Doc = async (document) => {
     try {
       console.log("=== INICIO getBase64Doc ===");
       console.log("Document recibido:", document);
-      console.log("Document type:", typeof document);
-      console.log("Document keys:", document ? Object.keys(document) : "NULL");
-    
+      
+      // Si el documento ya tiene una URL directa de SharePoint, usarla directamente
+      if (document && document.url && document.url.includes('sharepoint.com')) {
+        console.log("Documento ya tiene URL de SharePoint:", document.url);
+        return document.url;
+      }
+      
+      // Construir el payload según la clase DocumentBase64Request
+      const payload = {
+        DocumentId: document.documentId || "",
+        DocumentName: document.documentName || "",
+        Status: document.status || "1",
+        RecId: document.recId || 0,
+        RefRecId: document.refRecId || 0,
+        AttachRecId: document.attachRecId || 0,
+        Mandatory: document.mandatory || 0,
+        Url: "" // Se llena si ya existe
+      };
+      
+      console.log("Payload construido para base64:", payload);
+      
       let localUrl = baseUrl + "api/Document/base64";
-      console.log("URL para getBase64Doc:", localUrl);
       
       const headers = await createAuthHeaders({
         "Content-Type": "application/json",
       });
-      console.log("Headers preparados:", Object.keys(headers));
       
       console.log("Enviando request POST a Document/base64...");
-      console.log("JSON enviado:", JSON.stringify(document, null, 2));
-      
       const response1 = await fetch(localUrl, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify(document),
+        body: JSON.stringify(payload),
       });
       
       console.log("Response status:", response1.status);
       
       if (response1.status === 200) {
         const data = await response1.json();
-        console.log("Response data:", data);
-        console.log("Response data.Base64 exists:", data && data.Base64 ? "YES" : "NO");
-        if (data && data.Base64) {
-          console.log("Base64 length:", data.Base64.length);
-          console.log("Base64 preview:", data.Base64.substring(0, 100) + "...");
+        console.log("Response data recibida:", data);
+        
+        // Si la respuesta contiene una URL de SharePoint, devolverla directamente
+        if (data && data.url && data.url.includes('sharepoint.com')) {
+          console.log("URL de SharePoint recibida:", data.url);
+          return data.url;
         }
-        console.log("=== FIN getBase64Doc - ÉXITO, retornando base64 ===");
-        return data.Base64;
+        
+        // Si la respuesta contiene base64, devolverlo
+        if (data && data.base64) {
+          console.log("Base64 recibido, length:", data.base64.length);
+          return data.base64;
+        }
+        
+        console.log("Response no contiene url ni base64");
+        return "";
       } else {
         console.error("Error en Document/base64, status:", response1.status);
         const errorText = await response1.text();
         console.error("Error response text:", errorText);
-        console.log("=== FIN getBase64Doc - ERROR, retornando string vacío ===");
         return "";
       }
+      
     } catch (error) {
-      console.error("=== ERROR en getBase64Doc ===");
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
+      console.error("Error en getBase64Doc:", error.message);
       console.error("Error completo:", error);
-      alert("Ups! encontramos un error al cargar los datos: " + error);
-      console.log("=== FIN getBase64Doc - EXCEPCIÓN, retornando string vacío ===");
       return "";
     }
   };
@@ -189,21 +254,32 @@ const OrderLineState = (props) => {
   };
   const postNewSPDocumentation = async (dataJSON) => {
     try {
+      console.log("=== INICIO postNewSPDocumentation ===");
+      console.log("Datos JSON recibidos:", dataJSON);
+      
       let resp = "";
       let localUrl = baseUrl + "api/Document/postSP";
+      console.log("URL para postNewSPDocumentation:", localUrl);
       
       const headers = await createAuthHeaders({
         "Content-Type": "application/json",
       });
+      console.log("Headers preparados:", headers);
       
+      console.log("Enviando request a SP Documentation...");
       let response = await fetch(localUrl, {
         method: "POST",
         body: JSON.stringify(dataJSON),
         headers: headers,
       });
       
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+      
       if (response.status === 200) {
         const jsonResponse = await response.json();
+        console.log("Respuesta exitosa de SP Documentation:", jsonResponse);
+        // Como enviamos un array directamente, la respuesta también debería ser un array
         if (jsonResponse && Array.isArray(jsonResponse) && 
             jsonResponse.length > 0 && jsonResponse[0].url) {
           resp = jsonResponse[0].url;
@@ -211,36 +287,57 @@ const OrderLineState = (props) => {
                    Array.isArray(jsonResponse.listAttachments) &&
                    jsonResponse.listAttachments.length > 0 && 
                    jsonResponse.listAttachments[0].url) {
+          // Fallback: por si acaso viene envuelto
           resp = jsonResponse.listAttachments[0].url;
         }
+      } else {
+        console.error("Error en SP Documentation, status:", response.status);
+        const errorText = await response.text();
+        console.error("Error response text:", errorText);
       }
       
+      console.log("=== FIN postNewSPDocumentation, retornando:", resp);
       return resp;
     } catch (error) {
+      console.error("=== ERROR en postNewSPDocumentation ===");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("Error completo:", error);
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return "";
     }
   };
   const postAXDocumentation = async (dataSendArray, company) => {
     try {
+      console.log("=== INICIO postAXDocumentation ===");
+      console.log("Datos array para AX:", dataSendArray);
+      console.log("Company:", company);
+      
       let ret = 0;
       let localUrl = baseUrl + "api/Document/postAX?company=" + company;
+      console.log("URL para postAXDocumentation:", localUrl);
       
       const headers = await createAuthHeaders({
         "Content-Type": "application/json",
       });
+      console.log("Headers preparados:", headers);
       
+      console.log("Enviando primera request a AX Documentation...");
       const response = await fetch(localUrl, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify(dataSendArray),
+        body: JSON.stringify(dataSendArray), // ✅ CORRECTO: Enviar el array directamente
       });
+      
+      console.log("Primera response status:", response.status);
       
       if (response.status === 200) {
         const data = await response.json();
+        console.log("Primera response data:", data);
         
         if (data && data > 0) {
-
+          console.log("Data válida, enviando segunda request para update...");
+          // Usar el primer elemento del array para el update
           const firstAttachment = dataSendArray[0];
           localUrl =
             baseUrl +
@@ -251,6 +348,8 @@ const OrderLineState = (props) => {
             "&status=1&attachRecId=" +
             data;
           
+          console.log("URL para update:", localUrl);
+          
           const headers2 = await createAuthHeaders({
             "Content-Type": "application/json",
           });
@@ -260,14 +359,32 @@ const OrderLineState = (props) => {
             headers: headers2,
           });
           
+          console.log("Segunda response status:", response2.status);
+          
           if (response2.status === 200) {
             ret = await response2.json();
+            console.log("Segunda response data:", ret);
+          } else {
+            console.error("Error en segunda request, status:", response2.status);
+            const errorText = await response2.text();
+            console.error("Error text:", errorText);
           }
+        } else {
+          console.error("Primera response data no válida:", data);
         }
+      } else {
+        console.error("Error en primera request, status:", response.status);
+        const errorText = await response.text();
+        console.error("Error text:", errorText);
       }
       
+      console.log("=== FIN postAXDocumentation, retornando:", ret);
       return ret;
     } catch (error) {
+      console.error("=== ERROR en postAXDocumentation ===");
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("Error completo:", error);
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
@@ -351,16 +468,19 @@ const OrderLineState = (props) => {
       alert("Error al enviar la notificación de pánico. " + error);
     }
   };
-  const deleteSPDocumentation = async (recIdDocument, company = "li") => {
+  const deleteSPDocumentation = async (url) => {
     try {
       let resp = false;
-      let localUrl = baseUrl + "api/Document/delete?recIdDocument=" + recIdDocument + "&company=" + company;
+      let localUrl = baseUrl + "api/Document/delete";
       
-      const headers = await createAuthHeaders();
+      const headers = await createAuthHeaders({
+        "Content-Type": "application/json",
+      });
       
       let response = await fetch(localUrl, {
-        method: "GET",
+        method: "POST",
         headers: headers,
+        body: JSON.stringify(url),
       });
       
       if (response.status === 200) {
@@ -369,7 +489,7 @@ const OrderLineState = (props) => {
       return resp;
     } catch (error) {
       alert("Ups! encontramos un error al cargar los datos: " + error);
-      return false;
+      return "";
     }
   };
   const setOrderLine = useCallback((value) => {
