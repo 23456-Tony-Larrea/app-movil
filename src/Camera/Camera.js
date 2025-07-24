@@ -25,8 +25,6 @@ const Camera = ({ route }) => {
       quality: 1,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
@@ -52,7 +50,6 @@ const Camera = ({ route }) => {
         setbase64(result.assets[0].base64);
       }
     } catch (error) {
-      console.log("vaa error");
       console.log(error);
     }
   };
@@ -73,10 +70,8 @@ const Camera = ({ route }) => {
           tableId: 0,
         },
       ];
-      console.log("empezó");
-      const resp = await postSPDocumentation(sendData);
-      console.log("termino");
-      console.log(resp);
+      await postSPDocumentation(sendData);
+     
     }
   };
   /*
@@ -84,10 +79,6 @@ VER LO DE SHAREPOIN SUBIR ARCHIVOS Y ELIMINAR
 
 
 */
-
-  console.log(
-    document.documentName.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-  );
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

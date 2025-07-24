@@ -29,10 +29,12 @@ const Order = ({ order }) => {
     setTransportOrder,
     postTransportOrderChecker,
   } = useContext(TransportOrderContext);
+
   const fnOrderDetail = async (order) => {
     setTransportOrder(order);
     navigation.navigate("Detalles", { order: order });
   };
+
   const fnOTChecker = async (order) => {
     try {
       setloading(true);
@@ -69,6 +71,7 @@ const Order = ({ order }) => {
           <Text style={styles.text}>{order.deliveryDate.substring(0, 10)}</Text>
         </View>
       </View>
+
       {order.status === "0" && (
         <View style={styles.row}>
           <View

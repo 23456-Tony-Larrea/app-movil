@@ -9,111 +9,170 @@ import * as ImagePicker from "expo-image-picker";
 import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import Loading from "../Loading/Loading";
 import { extFile, tableIdDocuments } from "../../constants/config";
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const ModalChooseFile = ({ open, setOpen, document }) => {
   const { orderLines, setUpdate, postNewSPDocumentation, postAXDocumentation } =
     useContext(OrderLineContext);
-  const { company } = useContext(TransportOrderContext);
+  const { company, vendorRuc } = useContext(TransportOrderContext);
   const [loading, setloading] = useState(false);
 
-  const fnUploadFile = async (uri) => {
+  const fnUploadFile = async (uri, base64Data = null) => {
     try {
-      const dataForm = new FormData();
-      dataForm.append("file", {
-        uri: uri,
-        type: "image/jpeg",
-        name: "pruebas2.jpg",
-      });
-      dataForm.append(
-        "nombreArchivo",
-        document.documentName.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      );
-      dataForm.append("nombreCarpeta", "Desarrollo2");
-      dataForm.append("nombreCarpeta2", orderLines[0].liPackingSlipId);
-      dataForm.append("extArchivo", extFile);
+      if (!document) {
+        alert("Error: No se encontró información del documento");
+        return false;
+      }
 
-      const url = await postNewSPDocumentation(dataForm);
+      if (!document.documentName) {
+        alert("Error: El documento no tiene nombre");
+        return false;
+      }
+
+      if (!orderLines || orderLines.length === 0) {
+        alert("Error: No hay órdenes de línea disponibles");
+        return false;
+      }
+
+      if (!orderLines[0].liPackingSlipId) {
+        alert("Error: ID de packing slip no encontrado");
+        return false;
+      }
+
+      const normalizedFileName = document.documentName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      let finalBase64 = base64Data;
+      if (!finalBase64) {
+        alert("Error: Se necesita la imagen en formato base64");
+        return false;
+      }
+
+      const attachmentObject = {
+        base64: finalBase64,
+        nombreArchivo: normalizedFileName,
+        nombreCarpeta: "Desarrollo2",
+        nombreCarpeta2: orderLines[0].liPackingSlipId,
+        vendAccount: vendorRuc || "",
+        url: "", 
+        recIdRecord: parseInt(document.recId), 
+        tableId: parseInt(tableIdDocuments), 
+        extArchivo: extFile
+      };
+
+      const dataJSON = [attachmentObject];
+      
+      const url = await postNewSPDocumentation(dataJSON);
+
       if (url !== null && url !== undefined && url !== "") {
-        const dataAX = {
-          recIdRecord: document.recId,
-          tableId: tableIdDocuments,
+        const dataAX = [{
+          base64: "", 
+          nombreArchivo: normalizedFileName,
+          nombreCarpeta: "Desarrollo2",
+          nombreCarpeta2: orderLines[0].liPackingSlipId,
+          vendAccount: vendorRuc || "",
           url: url,
-          extArchivo: extFile,
-          nombreArchivo: document.documentName
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, ""),
-        };
+          recIdRecord: parseInt(document.recId),
+          tableId: parseInt(tableIdDocuments),
+          extArchivo: extFile
+        }];
+        
         const resp2 = await postAXDocumentation(dataAX, company);
+        
         if (resp2 !== 0) {
           return true;
+        } else {
+          alert("Error: No se pudo guardar la documentación en AX");
+          return false;
         }
+      } else {
+        alert("Error: No se pudo subir el archivo al servidor");
+        return false;
       }
-      return false;
     } catch (error) {
-      alert(error);
+      alert(`Error al cargar la información: ${error.message || error}`);
       return false;
     }
   };
 
   const fnOpenCamera = async () => {
-    try {
-      const permissionResult =
-        await ImagePicker.requestCameraPermissionsAsync();
-
-      if (permissionResult.granted === false) {
-        alert("Ha rechazado el acceso a la cámara del dispositivo!");
-        return;
-      }
-      setloading(true);
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.9,
-      });
-
-      if (!result.canceled) {
-        const resp = await fnUploadFile(result.assets[0].uri);
-        if (!resp) {
-          alert("Error al cargar la información.");
-        } else {
-          setUpdate(true);
-        }
-      }
-      setloading(false);
-      setOpen(!open);
-    } catch (error) {
-      setOpen(!open);
-      alert(error);
+  let base64Length = 0;
+  try {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (permissionResult.granted === false) {
+      alert("Ha rechazado el acceso a la cámara del dispositivo!");
+      return;
     }
-  };
-  const fnPickPhoto = async () => {
-    try {
-      const permissionResult =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (permissionResult.granted === false) {
-        alert("Ha rechazado el acceso a la cámara del dispositivo!");
-        return;
+    setloading(true);
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
+      base64: false, // No pidas base64 aquí, lo generas después
+    });
+
+    if (!result.canceled) {
+      // Manipula la imagen (redimensiona y comprime)
+      const manipResult = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 800 } }], // Cambia el ancho a 800px, ajusta según tu necesidad
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      const resp = await fnUploadFile(manipResult.uri, manipResult.base64);
+
+      if (!resp) {
+        alert("Error al cargar la información desde la cámara modalllll.");
+      } else {
+        setUpdate(true);
       }
-      setloading(true);
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.9,
-        base64: true,
-      });
-      if (!result.canceled) {
-        const resp = await fnUploadFile(result.assets[0].uri);
-        if (!resp) {
-          alert("Error al cargar la información.");
-        } else {
-          setUpdate(true);
-        }
-      }
-      setloading(false);
-      setOpen(!open);
-    } catch (error) {
-      setOpen(!open);
-      alert(error);
     }
-  };
+    setloading(false);
+    setOpen(!open);
+  } catch (error) {
+    setOpen(!open);
+    setloading(false);
+    alert(`Error en la cámara: ${error.message || error}`);
+    console.error(`Error en fnOpenCamera: ${error.message || error}`);
+  }
+};
+
+const fnPickPhoto = async () => {
+  try {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      alert("Ha rechazado el acceso a la galería del dispositivo!");
+      return;
+    }
+    setloading(true);
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.5,
+      base64: false, // No pidas base64 aquí, lo generas después
+    });
+
+    if (!result.canceled) {
+      // Manipula la imagen (redimensiona y comprime)
+      const manipResult = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+     
+      const resp = await fnUploadFile(manipResult.uri, manipResult.base64);
+
+      if (!resp) {
+        alert("Error al cargar la información desde fnPickPhoto.");
+      } else {
+        setUpdate(true);
+      }
+    }
+    setloading(false);
+    setOpen(!open);
+  } catch (error) {
+    setOpen(!open);
+    setloading(false);
+    alert(`Error en la galería: ${error.message || error}`);
+  }
+};
 
   return (
     <View>

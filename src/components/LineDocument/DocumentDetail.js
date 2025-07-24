@@ -8,8 +8,10 @@ import ModalChooseFile from "../Camera/ModalChooseFile";
 import { OrderLineContext } from "../../context/TransportOrderLines/OrderLineContext";
 import { TransportOrderContext } from "../../context/TransportOrder/TransportOrderContext";
 import Loading from "../Loading/Loading";
-
+import { Alert } from "react-native";
 const DocumentDetail = ({ item }) => {
+ 
+  
   const navigation = useNavigation();
   const { deleteSPDocumentation, postAXUpdateDocumentation, setUpdate } =
     useContext(OrderLineContext);
@@ -17,7 +19,18 @@ const DocumentDetail = ({ item }) => {
   const [openModal, setopenModal] = useState(false);
   const [loading, setloading] = useState(false);
   const fnHandleDeleteFile = async (url, recIdDocument) => {
-    try {
+    Alert.alert(
+      "Confirmación",
+      "¿Está seguro de que desea eliminar este archivo?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            try {
       setloading(true);
       const respSP = await deleteSPDocumentation(url);
       if (respSP) {
@@ -37,7 +50,12 @@ const DocumentDetail = ({ item }) => {
     } catch (error) {
       alert(error);
     }
-  };
+  
+          },
+        },
+      ]
+    )
+   };
 
   return (
     <>
