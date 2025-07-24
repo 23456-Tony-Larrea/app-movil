@@ -20,31 +20,6 @@ const OrderLineState = (props) => {
 
   const [state, dispatch] = useReducer(OrderLineReducer, initialState);
 
-  // Función auxiliar para obtener el token MSAL
-  const getMSALToken = async () => {
-    try {
-      const token = await AsyncStorage.getItem("@msalToken");
-      return token;
-    } catch (error) {
-      return null;
-    }
-  };
-
-  // Función auxiliar para crear headers con Bearer token
-  const createAuthHeaders = async (additionalHeaders = {}) => {
-    const token = await getMSALToken();
-    
-    const headers = {
-      ...additionalHeaders,
-    };
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    return headers;
-  };
-
   const getOrderLine = async (company, orderId) => {
     try {
       let localUrl =
@@ -53,14 +28,10 @@ const OrderLineState = (props) => {
         company +
         "&orderId=" +
         orderId;
-      
-      const headers = await createAuthHeaders();
-      
-      const response1 = await fetch(localUrl, {
-        method: "GET",
-        headers: headers,
-      });
-      
+      // "https://appentregas.life.com.ec/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=3";
+      // "https://lisvdsewe.life.com.ec:4401/api/TransportOrder/get?company=li&vendAccountNum=1792464463001&status=2";
+
+      const response1 = await fetch(localUrl);
       if (response1.status === 200) {
         const data = await response1.json();
         dispatch({
@@ -69,6 +40,10 @@ const OrderLineState = (props) => {
         });
       }
     } catch (error) {
+      // dispatch({
+      //   type: TRANSPORTORDER.ERROR,
+      //   payload: true,
+      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
   };
@@ -82,22 +57,12 @@ const OrderLineState = (props) => {
         recId +
         "&recIdOV=" +
         recIdOV;
-      
-      const headers = await createAuthHeaders();
-      
-      const response1 = await fetch(localUrl, {
-        method: "GET",
-        headers: headers,
-      });
-      
+      const response1 = await fetch(localUrl);
       if (response1.status === 200) {
         const data = await response1.json();
-        
-        if (data && Array.isArray(data)) {
-          data.sort((a, b) => {
-            return b.mandatory - a.mandatory;
-          });
-        }
+        data.sort((a, b) => {
+          return b.mandatory - a.mandatory;
+        });
 
         dispatch({
           type: ORDERLINE.DOCUMENTATION,
@@ -105,139 +70,125 @@ const OrderLineState = (props) => {
         });
       }
     } catch (error) {
+      // dispatch({
+      //   type: TRANSPORTORDER.ERROR,
+      //   payload: true,
+      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
     }
   };
- const getBase64Doc = async (document) => {
-  try {
-    let localUrl = baseUrl + "api/Document/base64";
-    
-    const headers = await createAuthHeaders({
-      "Content-Type": "application/json",
-    });
-    
-    const response1 = await fetch(localUrl, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(document),
-    });
-    
-    if (response1.status === 200) {
-      const data = await response1.json();
-      return data.base64;
+  const getBase64Doc = async (document) => {
+    try {
+      let localUrl = baseUrl + "api/Document/base64";
+      const response1 = await fetch(localUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(document),
+      });
+
+      if (response1.status === 200) {
+        const data = await response1.json();
+        return data.base64;
+      }
+      return "";
+    } catch (error) {
+      alert("Ups! encontramos un error al cargar los datos: " + error);
+      return "";
     }
-    return "";
-  } catch (error) {
-    alert("Ups! encontramos un error al cargar los datos: " + error);
-    return "";
-  }
-};
+  };
   const postSPDocumentation = async (dataSP) => {
     try {
       let localUrl = baseUrl + "api/Document/postSP";
-      
-      const headers = await createAuthHeaders({
-        "Content-Type": "application/json",
-      });
 
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(dataSP),
       });
-      
       if (response.status === 200) {
         const data = await response.json();
         if (data && data[0] && data[0].url) {
           return data[0].url;
         }
         return "";
+        // dispatch({
+        //   type: ORDERLINE.DOCUMENTATION,
+        //   payload: { data: data, loading: false },
+        // });
       }
     } catch (error) {
+      // dispatch({
+      //   type: TRANSPORTORDER.ERROR,
+      //   payload: true,
+      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return "";
     }
   };
-  const postNewSPDocumentation = async (dataJSON) => {
+  const postNewSPDocumentation = async (dataSP) => {
     try {
       let resp = "";
-      let localUrl = baseUrl + "api/Document/postSP";
-      
-      const headers = await createAuthHeaders({
-        "Content-Type": "application/json",
-      });
-      
+      let localUrl = baseUrl + "api/Document";
       let response = await fetch(localUrl, {
         method: "POST",
-        body: JSON.stringify(dataJSON),
-        headers: headers,
+        body: dataSP,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
-      
       if (response.status === 200) {
-        const jsonResponse = await response.json();
-        if (jsonResponse && Array.isArray(jsonResponse) && 
-            jsonResponse.length > 0 && jsonResponse[0].url) {
-          resp = jsonResponse[0].url;
-        } else if (jsonResponse && jsonResponse.listAttachments && 
-                   Array.isArray(jsonResponse.listAttachments) &&
-                   jsonResponse.listAttachments.length > 0 && 
-                   jsonResponse.listAttachments[0].url) {
-          resp = jsonResponse.listAttachments[0].url;
-        }
+        resp = await response.text();
       }
-      
       return resp;
     } catch (error) {
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return "";
     }
   };
-  const postAXDocumentation = async (dataSendArray, company) => {
+  const postAXDocumentation = async (dataSend, company) => {
     try {
       let ret = 0;
       let localUrl = baseUrl + "api/Document/postAX?company=" + company;
-      
-      const headers = await createAuthHeaders({
-        "Content-Type": "application/json",
-      });
-      
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: headers,
-        body: JSON.stringify(dataSendArray),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dataSend),
       });
-      
       if (response.status === 200) {
         const data = await response.json();
-        
         if (data && data > 0) {
-          const firstAttachment = dataSendArray[0];
           localUrl =
             baseUrl +
             "api/Document/update?company=" +
             company +
             "&recIdDocument=" +
-            firstAttachment.recIdRecord +
+            dataSend.recIdRecord +
             "&status=1&attachRecId=" +
             data;
-          
-          const headers2 = await createAuthHeaders({
-            "Content-Type": "application/json",
-          });
-          
+          console.log(localUrl);
           const response2 = await fetch(localUrl, {
             method: "POST",
-            headers: headers2,
+            headers: {
+              "Content-Type": "application/json",
+            },
           });
-          
           if (response2.status === 200) {
             ret = await response2.json();
           }
         }
       }
-      
       return ret;
     } catch (error) {
+      // dispatch({
+      //   type: TRANSPORTORDER.ERROR,
+      //   payload: true,
+      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
@@ -260,21 +211,22 @@ const OrderLineState = (props) => {
         status +
         "&attachRecId=" +
         attachRecId;
-      
-      const headers = await createAuthHeaders({
-        "Content-Type": "application/json",
-      });
-      
+      console.log(localUrl);
       const response2 = await fetch(localUrl, {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      
       if (response2.status === 200) {
         ret = await response2.json();
       }
       return ret;
     } catch (error) {
+      // dispatch({
+      //   type: TRANSPORTORDER.ERROR,
+      //   payload: true,
+      // });
       alert("Ups! encontramos un error al cargar los datos: " + error);
       return 0;
     }
@@ -295,55 +247,51 @@ const OrderLineState = (props) => {
         emailPanicNotification +
         "&company=" +
         company;
-      
-      const headers = await createAuthHeaders({
-        "Content-Type": "application/json",
-      });
-      
+      console.log(localUrl);
       const response = await fetch(localUrl, {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
-      
       dispatch({
         type: ORDERLINE.LOADING,
         payload: false,
       });
-      
-      if (response.status === 200) {
-        const result = await response.json();
-        return result;
-      } else {
-        return null;
-      }
+      return await response.json();
     } catch (error) {
+      // dispatch({
+      //   type: TRANSPORTORDER.ERROR,
+      //   payload: true,
+      // });
       alert("Error al enviar la notificación de pánico. " + error);
     }
   };
- const deleteSPDocumentation = async (url) => {
-  try {
-    let resp = false;
-    
-    const headers = await createAuthHeaders({
-      "Content-Type": "application/json",
-    });
-    
-    let response = await fetch(url, {
-      method: "GET",
-      headers: headers,
-    });
-    
-    if (response.status === 200) {
-      resp = await response.json();
+  const deleteSPDocumentation = async (url) => {
+    try {
+      let resp = false;
+      let localUrl = baseUrl + "api/Document/delete";
+      console.log(url);
+      let response = await fetch(localUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(url),
+      });
+      console.log(response.status);
+      if (response.status === 200) {
+        resp = await response.json();
+        console.log("eliminar");
+        console.log(resp);
+      }
+      return resp;
+    } catch (error) {
+      alert("Ups! encontramos un error al cargar los datos: " + error);
+      return "";
     }
-    
-    return resp;
-  } catch (error) {
-    alert("Ups! encontramos un error al cargar los datos: " + error);
-    return false;
-  }
-};
+  };
   const setOrderLine = useCallback((value) => {
     dispatch({
       type: ORDERLINE.SETORDERLINE,

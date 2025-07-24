@@ -10,13 +10,12 @@ export const OrderLineReducer = (state, action) => {
         update: action.payload.update,
       };
     case ORDERLINE.DOCUMENTATION:
-      const newState = {
+      return {
         ...state,
         documents: action.payload.data,
         loading: action.payload.loading,
         update: action.payload.update,
       };
-      return newState;
     case ORDERLINE.SETORDERLINE:
       return {
         ...state,
